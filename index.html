@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>In Phiếu Thu Tiền WiFi 58mm - Bluetooth</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#e74c3c">
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 10px;
+      color: #333;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      overflow: hidden;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      color: white;
+      text-align: center;
+      padding: 20px;
+      position: relative;
+    }
+    
+    .header h1 {
+      font-size: 24px;
+      margin: 0;
+    }
+    
+    .header .subtitle {
+      font-size: 14px;
+      opacity: 0.9;
+      margin-top: 5px;
+    }
+    
+    .bluetooth-status {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 12px;
+      padding: 5px 10px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.2);
+      transition: all 0.3s;
+    }
+    
+    .bluetooth-status.connected {
+      background: #27ae60;
+    }
+    
+    .config-section {
+      background: #f8f9fa;
+      padding: 20px;
+      border-bottom: 1px solid #dee2e6;
+    }
+    
+    .config-section h3 {
+      color: #495057;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .config-row {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    
+    .config-row label {
+      min-width: 120px;
+      font-weight: 600;
+      color: #495057;
+    }
+    
+    .config-row input {
+      flex: 1;
+      padding: 10px 15px;
+      border: 2px solid #ced4da;
+      border-radius: 8px;
+      font-size: 14px;
+      min-width: 250px;
+      transition: all 0.3s;
+    }
+    
+    .config-row input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .controls {
+      padding: 20px;
+      background: #f8f9fa;
+      border-bottom: 1px solid #dee2e6;
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    
+    .search-group {
+      flex: 1;
+      min-width: 300px;
+      display: flex;
+      gap: 10px;
+    }
+    
+    #searchInput {
+      flex: 1;
+      padding: 12px 16px;
+      border: 2px solid #ddd;
+      border-radius: 25px;
+      font-size: 16px;
+      outline: none;
+      transition: all 0.3s;
+    }
+    
+    #searchInput:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .btn {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 25px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .btn-primary { background: linear-gradient(135deg, #3498db, #2980b9); color: white; }
+    .btn-success { background: linear-gradient(135deg, #27ae60, #229954); color: white; }
+    .btn-warning { background: linear-gradient(135deg, #f39c12, #e67e22); color: white; }
+    .btn-danger { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; }
+    .btn-info { background: linear-gradient(135deg, #17a2b8, #138496); color: white; }
+    
+    .status {
+      text-align: center;
+      padding: 30px 20px;
+      font-size: 16px;
+      color: #666;
+    }
+    
+    .status.loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+    }
+    
+    .status.loading::before {
+      content: '';
+      width: 24px;
+      height: 24px;
+      border: 3px solid #ddd;
+      border-top: 3px solid #3498db;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    .status.success {
+      color: #27ae60;
+    }
+    
+    .status.error {
+      color: #e74c3c;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 15px 20px;
+      margin: 20px;
+      border-radius: 8px;
+      border-left: 4px solid #dc3545;
+    }
+    
+    .records {
+      max-height: calc(100vh - 450px);
+      overflow-y: auto;
+    }
+    
+    .record {
+      border-bottom: 1px solid #eee;
+      padding: 20px;
+      transition: all 0.3s;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+    }
+    
+    .record:hover {
+      background: #f8f9fa;
+    }
+    
+    .record:last-child {
+      border-bottom: none;
+    }
+    
+    .record.printed {
+      background: linear-gradient(90deg, #d4edda 0%, #ffffff 100%);
+      border-left: 4px solid #27ae60;
+    }
+    
+    .record-info {
+      flex: 1;
+    }
+    
+    .record-name {
+      font-size: 18px;
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .record-details {
+      color: #666;
+      line-height: 1.8;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 8px;
+    }
+    
+    .record-details div {
+      display: flex;
+      align-items: flex-start;
+    }
+    
+    .record-details strong {
+      min-width: 100px;
+      color: #495057;
+    }
+    
+    .record-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: flex-end;
+      min-width: 150px;
+    }
+    
+    .amount {
+      font-size: 20px;
+      font-weight: 700;
+      color: #e74c3c;
+      text-align: right;
+      background: rgba(231, 76, 60, 0.1);
+      padding: 8px 15px;
+      border-radius: 20px;
+      border: 2px solid rgba(231, 76, 60, 0.2);
+    }
+    
+    .print-status {
+      background: linear-gradient(135deg, #27ae60, #229954);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      box-shadow: 0 3px 10px rgba(39, 174, 96, 0.3);
+    }
+    
+    .no-bluetooth {
+      background: #fff3cd;
+      color: #856404;
+      padding: 15px 20px;
+      margin: 20px;
+      border-radius: 8px;
+      border: 1px solid #ffeaa7;
+      text-align: center;
+    }
+    
+    .footer {
+      background: #2c3e50;
+      color: white;
+      text-align: center;
+      padding: 20px;
+      font-size: 14px;
+    }
+    
+    @media (max-width: 768px) {
+      body {
+        padding: 5px;
+      }
+      
+      .header h1 {
+        font-size: 20px;
+      }
+      
+      .bluetooth-status {
+        position: static;
+        display: block;
+        margin-top: 10px;
+        text-align: center;
+      }
+      
+      .config-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .config-row label {
+        min-width: auto;
+      }
+      
+      .config-row input {
+        width: 100%;
+        min-width: auto;
+      }
+      
+      .controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .search-group {
+        width: 100%;
+        min-width: auto;
+        flex-direction: column;
+      }
+      
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .record {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .record-actions {
+        width: 100%;
+        align-items: center;
+      }
+      
+      .record-details {
+        grid-template-columns: 1fr;
+      }
+      
+      .amount {
+        font-size: 18px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🖨️ In Phiếu Thu Tiền WiFi</h1>
+      <div class="subtitle">Hệ thống in Bluetooth 58mm - Viettel Đồng Tháp</div>
+      <div class="bluetooth-status" id="bluetoothStatus">🔴 Bluetooth chưa kết nối</div>
+    </div>
+    
+    <!-- Cấu hình kết nối -->
+    <div class="config-section">
+      <h3>⚙️ Cấu hình kết nối Google Sheets</h3>
+      <div class="config-row">
+        <label>📊 Sheet ID:</label>
+        <input type="text" id="sheetId" value="1JDh0RBSY6rSME3lHmyJhKc5kHw4YD_0f-OFmkkC76Ms" placeholder="Nhập ID Google Sheets">
+      </div>
+      <div class="config-row">
+        <label>📄 Sheet Name:</label>
+        <input type="text" id="sheetName" value="Sheet1" placeholder="Tên sheet (VD: Sheet1)">
+      </div>
+      <div class="config-row">
+        <label></label>
+        <small style="color: #666; font-style: italic;">
+          💡 Lấy Sheet ID từ URL: https://docs.google.com/spreadsheets/d/<strong>SHEET_ID</strong>/edit
+        </small>
+      </div>
+    </div>
+    
+    <!-- Điều khiển -->
+    <div class="controls">
+      <div class="search-group">
+        <input type="text" id="searchInput" placeholder="🔍 Tìm kiếm theo tên, SĐT, địa chỉ...">
+        <button class="btn btn-primary" onclick="search()">
+          <span>🔍</span> Tìm kiếm
+        </button>
+        <button class="btn btn-success" onclick="loadAll()">
+          <span>📋</span> Tất cả
+        </button>
+      </div>
+      
+      <button class="btn btn-info" onclick="connectBluetooth()" id="bluetoothBtn">
+        <span>📶</span> Kết nối BT
+      </button>
+      <button class="btn btn-warning" onclick="testConnection()">
+        <span>🔧</span> Test Sheet
+      </button>
+    </div>
+
+    <!-- Trạng thái -->
+    <div id="status" class="status">
+      Nhập cấu hình Google Sheets và nhấn "Test Sheet" để bắt đầu
+    </div>
+    
+    <!-- Lỗi -->
+    <div id="error" class="error" style="display:none;"></div>
+    
+    <!-- Cảnh báo không hỗ trợ Bluetooth -->
+    <div id="noBluetoothWarning" class="no-bluetooth" style="display:none;">
+      ⚠️ <strong>Trình duyệt không hỗ trợ Web Bluetooth!</strong><br>
+      Hãy sử dụng: <strong>Chrome trên Android</strong> hoặc <strong>Edge trên Windows</strong>
+    </div>
+    
+    <!-- Danh sách bản ghi -->
+    <div id="records" class="records"></div>
+    
+    <!-- Footer -->
+    <div class="footer">
+      <div>📞 Hotline: 0978887797 | 📧 Email: support@viettel.com.vn</div>
+      <div style="margin-top: 5px; font-size: 12px; opacity: 0.8;">
+        © 2024 Viettel Đồng Tháp - Hệ thống in phiếu thu WiFi
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let allRecords = [];
+    let bluetoothDevice = null;
+    let bluetoothCharacteristic = null;
+
+    // ==================== KHỞI TẠO ====================
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      // Kiểm tra hỗ trợ Bluetooth
+      if (!navigator.bluetooth) {
+        document.getElementById('noBluetoothWarning').style.display = 'block';
+        document.getElementById('bluetoothBtn').disabled = true;
+      }
+      
+      // Enter để search
+      document.getElementById('searchInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') search();
+      });
+      
+      // Auto-save config
+      ['sheetId', 'sheetName'].forEach(id => {
+        const input = document.getElementById(id);
+        input.value = localStorage.getItem(id) || input.value;
+        input.addEventListener('input', () => {
+          localStorage.setItem(id, input.value);
+        });
+      });
+    });
+
+    // ==================== BLUETOOTH ====================
+    
+    async function connectBluetooth() {
+      if (!navigator.bluetooth) {
+        alert('❌ Trình duyệt không hỗ trợ Bluetooth!\n\n✅ Hãy sử dụng:\n• Chrome trên Android\n• Edge trên Windows\n• Safari trên iOS (mới)');
+        return;
+      }
+
+      try {
+        if (bluetoothDevice && bluetoothDevice.gatt.connected) {
+          // Ngắt kết nối
+          bluetoothDevice.gatt.disconnect();
+          updateBluetoothStatus(false);
+          return;
+        }
+
+        showStatus('loading', '🔍 Đang tìm máy in Bluetooth...');
+        
+        bluetoothDevice = await navigator.bluetooth.requestDevice({
+          filters: [
+            { services: ['000018f0-0000-1000-8000-00805f9b34fb'] },
+            { services: ['0000ff00-0000-1000-8000-00805f9b34fb'] },
+            { namePrefix: 'MTP-' },
+            { namePrefix: 'BlueTooth Printer' },
+            { namePrefix: 'Printer' },
+            { namePrefix: 'POS-' },
+            { namePrefix: 'RP' }
+          ],
+          optionalServices: [
+            '000018f0-0000-1000-8000-00805f9b34fb',
+            '0000ff00-0000-1000-8000-00805f9b34fb',
+            '00001101-0000-1000-8000-00805f9b34fb'
+          ]
+        });
+
+        showStatus('loading', `📶 Đang kết nối với ${bluetoothDevice.name || 'máy in'}...`);
+
+        const server = await bluetoothDevice.gatt.connect();
+        
+        // Tìm service và characteristic
+        let service, characteristic;
+        const serviceUUIDs = [
+          '000018f0-0000-1000-8000-00805f9b34fb',
+          '0000ff00-0000-1000-8000-00805f9b34fb'
+        ];
+        
+        const characteristicUUIDs = [
+          '00002af1-0000-1000-8000-00805f9b34fb',
+          '0000ff01-0000-1000-8000-00805f9b34fb',
+          '0000ff02-0000-1000-8000-00805f9b34fb'
+        ];
+
+        for (const serviceUUID of serviceUUIDs) {
+          try {
+            service = await server.getPrimaryService(serviceUUID);
+            for (const charUUID of characteristicUUIDs) {
+              try {
+                characteristic = await service.getCharacteristic(charUUID);
+                break;
+              } catch (e) { continue; }
+            }
+            if (characteristic) break;
+          } catch (e) { continue; }
+        }
+
+        if (!characteristic) {
+          // Thử tìm bất kỳ characteristic nào có thể write
+          const services = await server.getPrimaryServices();
+          for (const svc of services) {
+            const characteristics = await svc.getCharacteristics();
+            characteristic = characteristics.find(c => c.properties.write);
+            if (characteristic) break;
+          }
+        }
+
+        if (!characteristic) {
+          throw new Error('Không tìm thấy characteristic phù hợp để in');
+        }
+
+        bluetoothCharacteristic = characteristic;
+        
+        // Lắng nghe disconnect
+        bluetoothDevice.addEventListener('gattserverdisconnected', () => {
+          updateBluetoothStatus(false);
+          showStatus('error', '📶 Máy in đã ngắt kết nối');
+        });
+        
+        updateBluetoothStatus(true, bluetoothDevice.name);
+        showStatus('success', `✅ Đã kết nối với ${bluetoothDevice.name || 'máy in'}!`);
+        
+        // In thử
+        await testPrint();
+
+      } catch (error) {
+        console.error('Bluetooth error:', error);
+        if (error.name === 'NotFoundError') {
+          showError('❌ Không tìm thấy máy in. Đảm bảo máy in đã bật và ở chế độ pairing.');
+        } else {
+          showError(`❌ Lỗi kết nối Bluetooth: ${error.message}`);
+        }
+        updateBluetoothStatus(false);
+      }
+    }
+
+    async function testPrint() {
+      if (!bluetoothCharacteristic) {
+        throw new Error('Chưa kết nối máy in');
+      }
+
+      const testText = 
+        '\n\n' +
+        '================================\n' +
+        '         TEST PRINT\n' +
+        '================================\n' +
+        ' ✅ Máy in đã sẵn sàng!\n' +
+        ` ⏰ ${new Date().toLocaleString('vi-VN')}\n` +
+        '================================\n' +
+        ' 🖨️ Hệ thống in phiếu WiFi\n' +
+        ' 📞 Hotline: 0978887797\n' +
+        '================================\n' +
+        '\n\n\n';
+
+      const encoder = new TextEncoder();
+      const data = encoder.encode(testText);
+      
+      // Gửi từng chunk nhỏ
+      const chunkSize = 20;
+      for (let i = 0; i < data.length; i += chunkSize) {
+        const chunk = data.slice(i, i + chunkSize);
+        await bluetoothCharacteristic.writeValue(chunk);
+        await sleep(50); // Delay nhỏ giữa các chunk
+      }
+    }
+
+    async function printReceiptBluetooth(receiptData) {
+      if (!bluetoothCharacteristic) {
+        throw new Error('Chưa kết nối máy in Bluetooth');
+      }
+
+      try {
+        // ESC/POS commands
+        const ESC = '\x1B';
+        const GS = '\x1D';
+        
+        let printData = '';
+        
+        // Initialize printer
+        printData += ESC + '@'; // Initialize
+        printData += ESC + 'a' + '\x01'; // Center align
+        
+        // Header
+        printData += ESC + '!' + '\x18'; // Double size
+        printData += 'VIETTEL\n';
+        printData += ESC + '!' + '\x00'; // Normal size
+        printData += 'Theo cách của bạn\n';
+        printData += ESC + '!' + '\x08'; // Bold
+        printData += 'VIETTEL ĐỒNG THÁP\n';
+        printData += 'BIÊN NHẬN\n';
+        printData += ESC + '!' + '\x00'; // Normal
+        
+        printData += ESC + 'a' + '\x00'; // Left align
+        printData += '--------------------------------\n';
+        
+        // Content với ký tự đặc biệt
+        printData += 'Tên khách hàng:\n';
+        printData += `✂ ${receiptData.name}\n`;
+        printData += `Địa chỉ: ${receiptData.address}\n`;
+        printData += `Thuê bao: ${receiptData.service}\n`;
+        printData += `Nội dung: ${receiptData.content}\n`;
+        printData += `Điện thoại: ${receiptData.phone}\n`;
+        if (receiptData.invoice) {
+          printData += `Mã HĐ: ${receiptData.invoice}\n`;
+        }
+        printData += `Ký cước: ${new Date().toLocaleDateString('vi-VN')}\n`;
+        printData += '--------------------------------\n';
+        
+        // Số tiền
+        printData += ESC + '!' + '\x08'; // Bold
+        printData += `Số tiền: ${formatMoney(receiptData.amount)}\n`;
+        printData += ESC + '!' + '\x00'; // Normal
+        printData += `Bằng chữ: ${numberToWords(receiptData.amount)}\n`;
+        
+        printData += '--------------------------------\n';
+        printData += ESC + 'a' + '\x01'; // Center
+        printData += 'SĐT: 0978887797\n';
+        printData += 'Tổng đài: 18008119\n';
+        printData += '\n';
+        printData += '🙏 Cảm ơn quý khách! 🙏\n';
+        printData += '\n\n\n';
+        
+        // Cut paper (nếu máy in hỗ trợ)
+        printData += GS + 'V' + '\x00';
+
+        // Encode và gửi dữ liệu
+        const encoder = new TextEncoder();
+        const data = encoder.encode(printData);
+        
+        const chunkSize = 20; // Chunk size nhỏ để tương thích tốt hơn
+        for (let i = 0; i < data.length; i += chunkSize) {
+          const chunk = data.slice(i, i + chunkSize);
+          await bluetoothCharacteristic.writeValue(chunk);
+          await sleep(50); // Delay giữa các chunk
+        }
+
+      } catch (error) {
+        throw new Error(`Lỗi in: ${error.message}`);
+      }
+    }
+
+    function updateBluetoothStatus(connected, deviceName = '') {
+      const status = document.getElementById('bluetoothStatus');
+      const btn = document.getElementById('bluetoothBtn');
+      
+      if (connected) {
+        status.innerHTML = `🟢 ${deviceName || 'Máy in'} đã kết nối`;
+        status.classList.add('connected');
+        btn.innerHTML = '<span>🔌</span> Ngắt kết nối';
+      } else {
+        status.innerHTML = '🔴 Bluetooth chưa kết nối';
+        status.classList.remove('connected');
+        btn.innerHTML = '<span>📶</span> Kết nối BT';
+        bluetoothDevice = null;
+        bluetoothCharacteristic = null;
+      }
+    }
+
+    // ==================== GOOGLE SHEETS ====================
+    
+    async function testConnection() {
+      const sheetId = document.getElementById('sheetId').value.trim();
+      if (!sheetId) {
+        alert('❌ Vui lòng nhập Sheet ID!');
+        document.getElementById('sheetId').focus();
+        return;
+      }
+
+      showStatus('loading', '🔧 Kiểm tra kết nối Google Sheets...');
+      hideError();
+
+      try {
+        const data = await fetchSheetData();
+        showStatus('success', `✅ Kết nối thành công! Tìm thấy ${data.length - 1} bản ghi`);
+        setTimeout(() => loadData(), 1500);
+      } catch (error) {
+        showError(`❌ Lỗi kết nối Google Sheets: ${error.message}\n\n💡 Kiểm tra:\n• Sheet ID có đúng không?\n• Sheet có chia sẻ công khai không?\n• Tên sheet có đúng không?`);
+      }
+    }
+
+    async function fetchSheetData() {
+      const sheetId = document.getElementById('sheetId').value.trim();
+      const sheetName = document.getElementById('sheetName').value.trim() || 'Sheet1';
+      
+      // Sử dụng Google Sheets CSV export (công khai)
+      const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'text/csv,application/csv',
+        }
+      });
+      
+      if (!response.ok) {
+        if (response.status === 400) {
+          throw new Error('Sheet ID không hợp lệ hoặc không tồn tại');
+        } else if (response.status === 403) {
+          throw new Error('Sheet chưa được chia sẻ công khai. Hãy vào Google Sheets > Share > Anyone with link can view');
+        } else {
+          throw new Error(`HTTP ${response.status}: Không thể tải dữ liệu`);
+        }
+      }
+      
+      const csvText = await response.text();
+      
+      if (!csvText || csvText.trim() === '') {
+        throw new Error('Sheet trống hoặc tên sheet không đúng');
+      }
+      
+      return parseCSV(csvText);
+    }
+
+    function parseCSV(csvText) {
+      const lines = csvText.split('\n').filter(line => line.trim());
+      return lines.map(line => {
+        const values = [];
+        let current = '';
+        let inQuotes = false;
+        
+        for (let i = 0; i < line.length; i++) {
+          const char = line[i];
+          if (char === '"') {
+            if (inQuotes && line[i + 1] === '"') {
+              // Escaped quote
+              current += '"';
+              i++; // Skip next quote
+            } else {
+              inQuotes = !inQuotes;
+            }
+          } else if (char === ',' && !inQuotes) {
+            values.push(current.trim());
+            current = '';
+          } else {
+            current += char;
+          }
+        }
+        values.push(current.trim());
+        return values;
+      });
+    }
+
+    async function loadData() {
+      showStatus('loading', '📊 Đang tải dữ liệu từ Google Sheets...');
+      hideError();
+
+      try {
+        const data = await fetchSheetData();
+        if (data.length === 0) {
+          showStatus('error', '📭 Sheet trống hoặc không có dữ liệu');
+          return;
+        }
+
+        const headers = data[0];
+        const rows = data.slice(1).filter(row => 
+          row.some(cell => cell && cell.toString().trim() !== '')
+        );
+        
+        allRecords = rows.map((row, index) => ({
+          rowIndex: index + 2, // +2 vì header ở row 1, data bắt đầu từ row 2
+          data: row,
+          headers: headers
+        }));
+
+        displayRecords();
+        showStatus('success', `📄 Đã tải thành công ${allRecords.length} bản ghi`);
+
+      } catch (error) {
+        showError(`❌ Lỗi tải dữ liệu: ${error.message}`);
+      }
+    }
+
+    function displayRecords() {
+      const container = document.getElementById('records');
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+      
+      let filteredRecords = allRecords;
+      if (searchTerm) {
+        filteredRecords = allRecords.filter(record => 
+          record.data.some(cell => 
+            cell && cell.toString().toLowerCase().includes(searchTerm)
+          )
+        );
+      }
+
+      if (filteredRecords.length === 0) {
+        container.innerHTML = '<div class="status">📭 Không tìm thấy dữ liệu phù hợp</div>';
+        return;
+      }
+
+      container.innerHTML = filteredRecords.map(record => {
+        const row = record.data;
+        const headers = record.headers;
+        
+        // Tự động phát hiện các cột
+        const nameIdx = findColumnIndex(headers, ['tên', 'khách hàng', 'name']);
+        const addressIdx = findColumnIndex(headers, ['địa chỉ', 'address', 'diachi']);
+        const phoneIdx = findColumnIndex(headers, ['điện thoại', 'phone', 'sdt', 'dienthoai', 'liên hệ']);
+        const serviceIdx = findColumnIndex(headers, ['thuê bao', 'service', 'thuebao', 'dịch vụ']);
+        const contentIdx = findColumnIndex(headers, ['nội dung', 'content', 'noidung', 'ghi chú', 'ghichu']);
+        const amountIdx = findColumnIndex(headers, ['tiền', 'số tiền', 'sotien', 'amount', 'money', 'thành tiền']);
+        const printedIdx = findColumnIndex(headers, ['đã in', 'printed', 'dain', 'status']);
+        const invoiceIdx = findColumnIndex(headers, ['mã', 'hóa đơn', 'invoice', 'id', 'mahd']);
+        
+        const name = row[nameIdx] || 'N/A';
+        const address = row[addressIdx] || 'N/A';
+        const phone = row[phoneIdx] || 'N/A';
+        const service = row[serviceIdx] || 'N/A';
+        const content = row[contentIdx] || 'Thu tiền internet';
+        const amount = parseFloat((row[amountIdx] || '0').toString().replace(/[^\d.-]/g, '')) || 0;
+        const printed = (row[printedIdx] || '').toString().toLowerCase().includes('đã in');
+        const invoice = row[invoiceIdx] || '';
+        
+        return `
+          <div class="record ${printed ? 'printed' : ''}">
+            <div class="record-info">
+              <div class="record-name">
+                👤 ${name}
+                ${printed ? '<span style="color: #27ae60; font-size: 20px;">✅</span>' : ''}
+              </div>
+              <div class="record-details">
+                <div><strong>📍 Địa chỉ:</strong> ${address}</div>
+                <div><strong>📞 Điện thoại:</strong> ${phone}</div>
+                <div><strong>📡 Thuê bao:</strong> ${service}</div>
+                <div><strong>📝 Nội dung:</strong> ${content}</div>
+                ${invoice ? `<div><strong>🏷️ Mã HĐ:</strong> ${invoice}</div>` : ''}
+              </div>
+            </div>
+            <div class="record-actions">
+              <div class="amount">💰 ${formatMoney(amount)}</div>
+              ${printed ? 
+                '<div class="print-status">✅ Đã in rồi</div>' : 
+                `<button class="btn btn-danger" onclick="printReceipt('${escapeQuotes(name)}', '${escapeQuotes(address)}', '${phone}', '${escapeQuotes(service)}', '${escapeQuotes(content)}', ${amount}, '${invoice}', ${record.rowIndex})">
+                  <span>🖨️</span> In Bluetooth
+                </button>`
+              }
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function findColumnIndex(headers, possibleNames) {
+      for (const name of possibleNames) {
+        const index = headers.findIndex(header => 
+          header && header.toLowerCase().includes(name.toLowerCase())
+        );
+        if (index !== -1) return index;
+      }
+      return -1; // Không tìm thấy
+    }
+
+    function escapeQuotes(str) {
+      return str.replace(/'/g, "\\'").replace(/"/g, '\\"');
+    }
+
+    async function printReceipt(name, address, phone, service, content, amount, invoice, rowIndex) {
+      if (!bluetoothCharacteristic) {
+        if (confirm('❌ Chưa kết nối máy in Bluetooth!\n\n📶 Bạn có muốn kết nối ngay không?')) {
+          await connectBluetooth();
+          if (!bluetoothCharacteristic) return;
+        } else {
+          return;
+        }
+      }
+
+      try {
+        showStatus('loading', '🖨️ Đang in phiếu thu...');
+
+        await printReceiptBluetooth({
+          name, address, phone, service, content, amount, invoice
+        });
+
+        showStatus('success', `✅ Đã in thành công phiếu của ${name}!`);
+        
+        // TODO: Có thể thêm tính năng cập nhật "Đã in" vào Google Sheets
+        // Hiện tại chỉ thông báo thành công
+
+      } catch (error) {
+        console.error('Print error:', error);
+        showError(`❌ Lỗi in phiếu: ${error.message}`);
+      }
+    }
+
+    // ==================== HELPER FUNCTIONS ====================
+
+    function search() {
+      if (allRecords.length === 0) {
+        alert('⚠️ Chưa tải dữ liệu. Hãy nhấn "Test Sheet" trước!');
+        return;
+      }
+      displayRecords();
+    }
+
+    function loadAll() {
+      document.getElementById('searchInput').value = '';
+      if (allRecords.length === 0) {
+        loadData();
+      } else {
+        displayRecords();
+      }
+    }
+
+    function formatMoney(amount) {
+      if (!amount || amount === 0) return '0 đ';
+      return new Intl.NumberFormat('vi-VN', {
+        style: 'currency', 
+        currency: 'VND'
+      }).format(amount);
+    }
+
+    function numberToWords(num) {
+      if (!num || num === 0) return 'Không đồng';
+      
+      const ones = ['', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
+      const tens = ['', 'mười', 'hai mười', 'ba mười', 'bốn mười', 'năm mười', 'sáu mười', 'bảy mười', 'tám mười', 'chín mười'];
+      const scales = ['', 'nghìn', 'triệu', 'tỷ'];
+      
+      function convertHundreds(n) {
+        let result = '';
+        if (n >= 100) {
+          result += ones[Math.floor(n / 100)] + ' trăm ';
+          n %= 100;
+        }
+        if (n >= 20) {
+          result += tens[Math.floor(n / 10)].replace('mười', 'mươi') + ' ';
+          n %= 10;
+        } else if (n >= 10) {
+          result += 'mười ';
+          n %= 10;
+        }
+        if (n > 0) result += ones[n] + ' ';
+        return result;
+      }
+      
+      let result = '';
+      let scaleIndex = 0;
+      
+      while (num > 0) {
+        const chunk = num % 1000;
+        if (chunk !== 0) {
+          result = convertHundreds(chunk) + scales[scaleIndex] + ' ' + result;
+        }
+        num = Math.floor(num / 1000);
+        scaleIndex++;
+      }
+      
+      return result.trim() + ' đồng';
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function showStatus(type, message) {
+      const status = document.getElementById('status');
+      status.className = `status ${type}`;
+      status.textContent = message;
+      status.style.display = 'block';
+    }
+
+    function showError(message) {
+      const error = document.getElementById('error');
+      error.textContent = message;
+      error.style.display = 'block';
+      document.getElementById('status').style.display = 'none';
+    }
+
+    function hideError() {
+      document.getElementById('error').style.display = 'none';
+    }
+  </script>
+</body>
+</html>
