@@ -409,8 +409,8 @@
              alt="Viettel Logo" 
              style="height: 40px; filter: brightness(0) invert(1);">
         <div>
-          <h1 style="margin: 0; font-size: 24px;">In Phiếu Thu Tiền WiFi</h1>
-          <div class="subtitle">Hệ thống in Bluetooth 58mm - Viettel Đồng Tháp</div>
+          <h1 style="margin: 0; font-size: 24px;">In Phiếu Thu Viettel - 7 Encoding Modes</h1>
+          <div class="subtitle">Hỗ trợ tiếng Việt có dấu với 7 phương pháp encoding khác nhau</div>
         </div>
       </div>
       <div class="bluetooth-status" id="bluetoothStatus">🔴 Bluetooth chưa kết nối</div>
@@ -431,16 +431,24 @@
         <label>🔤 Encoding Mode:</label>
         <select id="encodingMode">
           <option value="ascii-fallback">ASCII Safe (No Diacritics) - Recommended</option>
-          <option value="vietnamese-safe">Vietnamese with Diacritics (UTF-8)</option>
+          <option value="tcvn3-abc">TCVN-3 (ABC) - Classic Vietnamese</option>
+          <option value="vni-encoding">VNI Encoding - Alternative Vietnamese</option>
+          <option value="iso-8859-1">ISO-8859-1 with Custom Mapping</option>
+          <option value="composite-chars">Composite Characters (Base + Diacritics)</option>
+          <option value="vietnamese-safe">Vietnamese UTF-8 (May cause issues)</option>
           <option value="windows-1258">Windows-1258 (CP1258)</option>
         </select>
       </div>
       <div class="config-row">
         <label></label>
         <div class="encoding-info">
-          <strong>ASCII Safe:</strong> Bỏ dấu tiếng Việt, tương thích 100% máy in Y58 (như ảnh thực tế)<br>
-          <strong>Vietnamese with Diacritics:</strong> Giữ nguyên tiếng Việt có dấu (UTF-8)<br>
-          <strong>Windows-1258:</strong> Encoding chuẩn Windows cho tiếng Việt
+          <strong>ASCII Safe:</strong> Bỏ dấu tiếng Việt, tương thích 100% (như ảnh thực tế)<br>
+          <strong>TCVN-3 (ABC):</strong> Encoding tiếng Việt cổ điển, tương thích tốt với máy in cũ<br>
+          <strong>VNI Encoding:</strong> Phương pháp mã hóa tiếng Việt khác, có thể hoạt động tốt<br>
+          <strong>ISO-8859-1:</strong> Latin-1 với mapping tùy chỉnh cho tiếng Việt<br>
+          <strong>Composite Characters:</strong> Tách chữ cái và dấu riêng biệt<br>
+          <strong>Vietnamese UTF-8:</strong> Giữ nguyên có dấu (có thể gây lỗi)<br>
+          <strong>Windows-1258:</strong> Encoding Windows chuẩn
         </div>
       </div>
       <div class="config-row">
@@ -476,7 +484,12 @@
 
     <!-- Trạng thái -->
     <div id="status" class="status">
-      Nhập cấu hình Google Sheets và nhấn "Test Sheet" để bắt đầu
+      🎯 <strong>Hướng dẫn in tiếng Việt có dấu:</strong><br>
+      1. Chọn encoding mode (thử từng cái để tìm ra cái tốt nhất)<br>
+      2. Kết nối Bluetooth Y58<br>
+      3. Nhấn "Test In Mẫu" để thử nghiệm<br>
+      4. Nếu bị lỗi ký tự Trung Quốc → thử encoding mode khác<br>
+      💡 <strong>Khuyến nghị:</strong> Thử TCVN-3 hoặc VNI Encoding trước!
     </div>
     
     <!-- Lỗi -->
@@ -495,7 +508,7 @@
     <div class="footer">
       <div>📞 Hotline: 0978887797 | 📧 Email: support@viettel.com.vn</div>
       <div style="margin-top: 5px; font-size: 12px; opacity: 0.8;">
-        © 2024 Viettel Đồng Tháp - Hệ thống in phiếu thu WiFi (Fixed Vietnamese)
+        © 2024 Viettel Đồng Tháp - 7 Encoding Modes: ASCII, TCVN-3, VNI, ISO-8859-1, Composite, UTF-8, CP1258
       </div>
     </div>
   </div>
@@ -605,33 +618,46 @@
       try {
         showStatus('loading', '🧪 Đang test in tiếng Việt...');
         
+        let testContent = '';
+        
+        if (encodingMode === 'ascii-fallback') {
+          testContent = 
+            'Ten khach hang:\n' +
+            'NGUYEN BAO CHI\n' +
+            'Dia chi: Phu Loi A Phu\n' +
+            'Thuan B Hong Ngu\n' +
+            'Dong Thap.\n' +
+            'So tien: 200.000 d\n' +
+            'Bang chu: Hai tram ngan dong.\n';
+        } else {
+          testContent = 
+            'Tên khách hàng:\n' +
+            'NGUYỄN BẢO CHÍ\n' +
+            'Địa chỉ: Phú Lợi A Phú\n' +
+            'Thuận B Hồng Ngự\n' +
+            'Đồng Tháp.\n' +
+            'Số tiền: 200.000 đ\n' +
+            'Bằng chữ: Hai trăm nghìn đồng.\n' +
+            'Test tất cả dấu:\n' +
+            'à á ả ã ạ ă ằ ắ ẳ ẵ ặ\n' +
+            'â ầ ấ ẩ ẫ ậ è é ẻ ẽ ẹ\n' +
+            'ê ề ế ể ễ ệ ò ó ỏ õ ọ\n' +
+            'ô ồ ố ổ ỗ ộ ơ ờ ớ ở ỡ ợ\n' +
+            'ù ú ủ ũ ụ ư ừ ứ ử ữ ự\n' +
+            'ỳ ý ỷ ỹ ỵ đ Đ\n';
+        }
+        
         const testText = 
           '\n' +
           '     viettel\n' +
           '  Theo cach cua ban\n' +
           '\n' +
           ' VIETTEL DONG THAP\n' +
-          '    BIEN NHAN\n' +
+          '    TEST ENCODING\n' +
           '================================\n' +
-          'Ten khach hang:\n' +
-          'NGUYEN BAO CHI\n' +
-          'Dia chi: Phu Loi A Phu\n' +
-          'Thuan B Hong Ngu\n' +
-          'Dong Thap.\n' +
-          'Thue bao:\n' +
-          'd067_gftth_langd0\n' +
-          'Noi dung:\n' +
-          'Thu tien internet\n' +
-          'Dien thoai lien he:\n' +
-          '0822845232\n' +
-          'Ky cuoc:\n' +
-          'Thang 12/2024\n' +
-          'So tien: 200.000 d\n' +
-          'Bang chu: Hai tram ngan dong.\n' +
-          'SDT lien he: 0978887797\n' +
-          'Tong dai cskh: 18008119\n' +
-          '\n' +
-          ` Test thanh cong: ${encodingMode}\n` +
+          testContent +
+          '================================\n' +
+          ` Encoding: ${encodingMode}\n` +
           ` Thoi gian: ${new Date().toLocaleString('vi-VN')}\n` +
           '\n\n';
 
@@ -650,6 +676,8 @@
       if (!bluetoothCharacteristic) {
         throw new Error('Chưa kết nối máy in');
       }
+
+      const encodingMode = document.getElementById('encodingMode').value;
 
       try {
         let receipt = '';
@@ -671,40 +699,69 @@
         receipt += '\x1B\x61\x00'; // Left align
         receipt += '================================\n';
         
-        // Thông tin khách hàng - Format giống ảnh
-        receipt += 'Ten khach hang:\n';
-        receipt += `${receiptData.name}\n`;
-        
-        receipt += 'Dia chi: ';
-        const address = receiptData.address;
-        if (address.length > 25) {
-          const addressLines = wrapText(address, 25);
-          receipt += addressLines[0] + '\n';
-          for (let i = 1; i < addressLines.length; i++) {
-            receipt += addressLines[i] + '\n';
+        // Thông tin khách hàng - Format adaptive theo encoding
+        if (encodingMode === 'ascii-fallback') {
+          receipt += 'Ten khach hang:\n';
+          receipt += `${receiptData.name}\n`;
+          receipt += 'Dia chi: ';
+          
+          const address = receiptData.address;
+          if (address.length > 25) {
+            const addressLines = wrapText(address, 25);
+            receipt += addressLines[0] + '\n';
+            for (let i = 1; i < addressLines.length; i++) {
+              receipt += addressLines[i] + '\n';
+            }
+          } else {
+            receipt += address + '\n';
           }
+          
+          receipt += 'Thue bao:\n';
+          receipt += `${receiptData.service}\n`;
+          receipt += 'Noi dung:\n';
+          receipt += `${receiptData.content}\n`;
+          receipt += 'Dien thoai lien he:\n';
+          receipt += `${receiptData.phone}\n`;
+          receipt += 'Ky cuoc:\n';
         } else {
-          receipt += address + '\n';
+          receipt += 'Tên khách hàng:\n';
+          receipt += `${receiptData.name}\n`;
+          receipt += 'Địa chỉ: ';
+          
+          const address = receiptData.address;
+          if (address.length > 25) {
+            const addressLines = wrapText(address, 25);
+            receipt += addressLines[0] + '\n';
+            for (let i = 1; i < addressLines.length; i++) {
+              receipt += addressLines[i] + '\n';
+            }
+          } else {
+            receipt += address + '\n';
+          }
+          
+          receipt += 'Thuê bao:\n';
+          receipt += `${receiptData.service}\n`;
+          receipt += 'Nội dung:\n';
+          receipt += `${receiptData.content}\n`;
+          receipt += 'Điện thoại liên hệ:\n';
+          receipt += `${receiptData.phone}\n`;
+          receipt += 'Ký cước:\n';
         }
         
-        receipt += 'Thue bao:\n';
-        receipt += `${receiptData.service}\n`;
-        
-        receipt += 'Noi dung:\n';
-        receipt += `${receiptData.content}\n`;
-        
-        receipt += 'Dien thoai lien he:\n';
-        receipt += `${receiptData.phone}\n`;
-        
-        receipt += 'Ky cuoc:\n';
         receipt += `${formatDateVietnam(new Date())}\n`;
         
-        // Số tiền - Format giống ảnh
-        receipt += `So tien: ${formatMoneyVietnam(receiptData.amount)}\n`;
-        receipt += `Bang chu: ${numberToVietnameseWords(receiptData.amount)}\n`;
-        
-        receipt += 'SDT lien he: 0978887797\n';
-        receipt += 'Tong dai cskh: 18008119\n';
+        // Số tiền - Format adaptive
+        if (encodingMode === 'ascii-fallback') {
+          receipt += `So tien: ${formatMoneyVietnam(receiptData.amount)}\n`;
+          receipt += `Bang chu: ${numberToVietnameseWords(receiptData.amount)}\n`;
+          receipt += 'SDT lien he: 0978887797\n';
+          receipt += 'Tong dai cskh: 18008119\n';
+        } else {
+          receipt += `Số tiền: ${formatMoneyVietnam(receiptData.amount)}\n`;
+          receipt += `Bằng chữ: ${numberToVietnameseWords(receiptData.amount)}\n`;
+          receipt += 'SĐT liên hệ: 0978887797\n';
+          receipt += 'Tổng đài CSKH: 18008119\n';
+        }
         
         receipt += '\n\n\n';
 
@@ -727,7 +784,24 @@
         // Setup printer với ESC commands
         let setupCommands = '';
         setupCommands += '\x1B\x40'; // ESC @ - Reset printer
-        setupCommands += '\x1B\x74\x1E'; // ESC t 30 - Set Vietnamese code page CP1258
+        
+        // Chọn code page tùy theo encoding mode
+        switch (encodingMode) {
+          case 'tcvn3-abc':
+          case 'vni-encoding':
+          case 'iso-8859-1':
+            setupCommands += '\x1B\x74\x00'; // ESC t 0 - PC437 (US)
+            break;
+          case 'composite-chars':
+            setupCommands += '\x1B\x74\x01'; // ESC t 1 - Katakana
+            break;
+          case 'windows-1258':
+            setupCommands += '\x1B\x74\x1E'; // ESC t 30 - CP1258
+            break;
+          default:
+            setupCommands += '\x1B\x74\x1E'; // ESC t 30 - CP1258 default
+        }
+        
         setupCommands += '\x1B\x52\x08'; // ESC R 8 - Select international character set
         
         // Gửi setup commands trước
@@ -737,17 +811,29 @@
         let processedText;
         
         switch (encodingMode) {
+          case 'ascii-fallback':
+            processedText = removeDiacritics(text);
+            break;
+          case 'tcvn3-abc':
+            processedText = convertToTCVN3(text);
+            break;
+          case 'vni-encoding':
+            processedText = convertToVNI(text);
+            break;
+          case 'iso-8859-1':
+            processedText = convertToISO88591(text);
+            break;
+          case 'composite-chars':
+            processedText = convertToCompositeChars(text);
+            break;
           case 'vietnamese-safe':
             processedText = convertToVietnameseSafe(text);
             break;
           case 'windows-1258':
             processedText = convertToWindows1258(text);
             break;
-          case 'ascii-fallback':
-            processedText = removeDiacritics(text);
-            break;
           default:
-            processedText = convertToVietnameseSafe(text);
+            processedText = removeDiacritics(text);
         }
         
         console.log('Encoding mode:', encodingMode);
@@ -899,7 +985,188 @@
       return result;
     }
 
-    // REMOVE DIACRITICS - ASCII SAFE (giống ảnh thực tế)
+    // TCVN-3 (ABC) ENCODING - Classic Vietnamese encoding
+    function convertToTCVN3(text) {
+      // TCVN-3 mapping cho tiếng Việt - tương thích máy in cũ
+      const tcvn3Map = {
+        // Chữ thường có dấu
+        'à': '\x85', 'á': '\x86', 'ả': '\x87', 'ã': '\x88', 'ạ': '\x89',
+        'ă': '\x8A', 'ằ': '\x8B', 'ắ': '\x8C', 'ẳ': '\x8D', 'ẵ': '\x8E', 'ặ': '\x8F',
+        'â': '\x90', 'ầ': '\x91', 'ấ': '\x92', 'ẩ': '\x93', 'ẫ': '\x94', 'ậ': '\x95',
+        'è': '\x96', 'é': '\x97', 'ẻ': '\x98', 'ẽ': '\x99', 'ẹ': '\x9A',
+        'ê': '\x9B', 'ề': '\x9C', 'ế': '\x9D', 'ể': '\x9E', 'ễ': '\x9F', 'ệ': '\xA0',
+        'ì': '\xA1', 'í': '\xA2', 'ỉ': '\xA3', 'ĩ': '\xA4', 'ị': '\xA5',
+        'ò': '\xA6', 'ó': '\xA7', 'ỏ': '\xA8', 'õ': '\xA9', 'ọ': '\xAA',
+        'ô': '\xAB', 'ồ': '\xAC', 'ố': '\xAD', 'ổ': '\xAE', 'ỗ': '\xAF', 'ộ': '\xB0',
+        'ơ': '\xB1', 'ờ': '\xB2', 'ớ': '\xB3', 'ở': '\xB4', 'ỡ': '\xB5', 'ợ': '\xB6',
+        'ù': '\xB7', 'ú': '\xB8', 'ủ': '\xB9', 'ũ': '\xBA', 'ụ': '\xBB',
+        'ư': '\xBC', 'ừ': '\xBD', 'ứ': '\xBE', 'ử': '\xBF', 'ữ': '\xC0', 'ự': '\xC1',
+        'ỳ': '\xC2', 'ý': '\xC3', 'ỷ': '\xC4', 'ỹ': '\xC5', 'ỵ': '\xC6',
+        'đ': '\xC7',
+        
+        // Chữ hoa có dấu - simplified mapping
+        'À': '\x80', 'Á': '\x81', 'Ả': '\x82', 'Ã': '\x83', 'Ạ': '\x84',
+        'Ă': '\xC8', 'Â': '\xC9', 'È': '\xCA', 'É': '\xCB', 'Ẻ': '\xCC',
+        'Ê': '\xCD', 'Ì': '\xCE', 'Í': '\xCF', 'Ò': '\xD0', 'Ó': '\xD1',
+        'Ô': '\xD2', 'Ơ': '\xD3', 'Ù': '\xD4', 'Ú': '\xD5', 'Ư': '\xD6',
+        'Ý': '\xD7', 'Đ': '\xD8'
+      };
+
+      let result = '';
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        if (tcvn3Map[char]) {
+          result += tcvn3Map[char];
+        } else {
+          result += char;
+        }
+      }
+      
+      return result;
+    }
+
+    // VNI ENCODING - Alternative Vietnamese encoding
+    function convertToVNI(text) {
+      // VNI mapping cho tiếng Việt
+      const vniMap = {
+        // Chữ thường
+        'à': '\xE0', 'á': '\xE1', 'ả': '\xE2', 'ã': '\xE3', 'ạ': '\xE4',
+        'ă': '\xE5', 'ằ': '\xE6', 'ắ': '\xE7', 'ẳ': '\xE8', 'ẵ': '\xE9', 'ặ': '\xEA',
+        'â': '\xEB', 'ầ': '\xEC', 'ấ': '\xED', 'ẩ': '\xEE', 'ẫ': '\xEF', 'ậ': '\xF0',
+        'è': '\xF1', 'é': '\xF2', 'ẻ': '\xF3', 'ẽ': '\xF4', 'ẹ': '\xF5',
+        'ê': '\xF6', 'ề': '\xF7', 'ế': '\xF8', 'ể': '\xF9', 'ễ': '\xFA', 'ệ': '\xFB',
+        'ì': '\x8C', 'í': '\x8D', 'ỉ': '\x8E', 'ĩ': '\x8F', 'ị': '\x90',
+        'ò': '\x91', 'ó': '\x92', 'ỏ': '\x93', 'õ': '\x94', 'ọ': '\x95',
+        'ô': '\x96', 'ồ': '\x97', 'ố': '\x98', 'ổ': '\x99', 'ỗ': '\x9A', 'ộ': '\x9B',
+        'ơ': '\x9C', 'ờ': '\x9D', 'ớ': '\x9E', 'ở': '\x9F', 'ỡ': '\xA0', 'ợ': '\xA1',
+        'ù': '\xA2', 'ú': '\xA3', 'ủ': '\xA4', 'ũ': '\xA5', 'ụ': '\xA6',
+        'ư': '\xA7', 'ừ': '\xA8', 'ứ': '\xA9', 'ử': '\xAA', 'ữ': '\xAB', 'ự': '\xAC',
+        'ỳ': '\xAD', 'ý': '\xAE', 'ỷ': '\xAF', 'ỹ': '\xB0', 'ỵ': '\xB1',
+        'đ': '\xB2',
+        
+        // Chữ hoa
+        'À': '\x80', 'Á': '\x81', 'Ả': '\x82', 'Ã': '\x83', 'Ạ': '\x84',
+        'Ă': '\x85', 'Â': '\x86', 'È': '\x87', 'É': '\x88', 'Ê': '\x89',
+        'Ì': '\x8A', 'Í': '\x8B', 'Ò': '\xB3', 'Ó': '\xB4', 'Ô': '\xB5',
+        'Ơ': '\xB6', 'Ù': '\xB7', 'Ú': '\xB8', 'Ư': '\xB9', 'Ý': '\xBA',
+        'Đ': '\xBB'
+      };
+
+      let result = '';
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        if (vniMap[char]) {
+          result += vniMap[char];
+        } else {
+          result += char;
+        }
+      }
+      
+      return result;
+    }
+
+    // ISO-8859-1 with Custom Vietnamese Mapping
+    function convertToISO88591(text) {
+      // ISO-8859-1 Latin-1 với custom mapping cho tiếng Việt
+      const iso88591Map = {
+        // Map một số ký tự tiếng Việt vào Latin-1 extended
+        'à': '\xE0', 'á': '\xE1', 'â': '\xE2', 'ã': '\xE3',
+        'è': '\xE8', 'é': '\xE9', 'ê': '\xEA',
+        'ì': '\xEC', 'í': '\xED', 'î': '\xEE',
+        'ò': '\xF2', 'ó': '\xF3', 'ô': '\xF4', 'õ': '\xF5',
+        'ù': '\xF9', 'ú': '\xFA', 'û': '\xFB',
+        'ý': '\xFD',
+        'À': '\xC0', 'Á': '\xC1', 'Â': '\xC2', 'Ã': '\xC3',
+        'È': '\xC8', 'É': '\xC9', 'Ê': '\xCA',
+        'Ì': '\xCC', 'Í': '\xCD', 'Î': '\xCE',
+        'Ò': '\xD2', 'Ó': '\xD3', 'Ô': '\xD4', 'Õ': '\xD5',
+        'Ù': '\xD9', 'Ú': '\xDA', 'Û': '\xDB',
+        'Ý': '\xDD',
+        
+        // Các ký tự đặc biệt tiếng Việt fallback về gần nhất
+        'ă': 'a', 'ắ': '\xE1', 'ằ': '\xE0', 'ẳ': 'a', 'ẵ': '\xE3', 'ặ': 'a',
+        'ậ': '\xE2', 'ấ': '\xE1', 'ầ': '\xE0', 'ẩ': '\xE2', 'ẫ': '\xE3',
+        'ẻ': 'e', 'ẽ': 'e', 'ẹ': 'e', 'ề': '\xE8', 'ế': '\xE9', 'ể': '\xEA', 'ễ': 'e', 'ệ': 'e',
+        'ỉ': 'i', 'ĩ': 'i', 'ị': 'i',
+        'ỏ': 'o', 'ọ': 'o', 'ồ': '\xF2', 'ố': '\xF3', 'ổ': '\xF4', 'ỗ': '\xF5', 'ộ': 'o',
+        'ơ': 'o', 'ờ': '\xF2', 'ớ': '\xF3', 'ở': 'o', 'ỡ': '\xF5', 'ợ': 'o',
+        'ủ': 'u', 'ũ': 'u', 'ụ': 'u',
+        'ư': 'u', 'ừ': '\xF9', 'ứ': '\xFA', 'ử': 'u', 'ữ': 'u', 'ự': 'u',
+        'ỳ': 'y', 'ỷ': 'y', 'ỹ': 'y', 'ỵ': 'y',
+        'đ': 'd', 'Đ': 'D'
+      };
+
+      let result = '';
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        if (iso88591Map[char]) {
+          result += iso88591Map[char];
+        } else {
+          result += char;
+        }
+      }
+      
+      return result;
+    }
+
+    // COMPOSITE CHARACTERS - Tách chữ cái và dấu
+    function convertToCompositeChars(text) {
+      // Tách ký tự có dấu thành chữ cái + dấu riêng biệt
+      const compositeMap = {
+        // Dấu huyền (grave)
+        'à': 'a\x60', 'è': 'e\x60', 'ì': 'i\x60', 'ò': 'o\x60', 'ù': 'u\x60', 'ỳ': 'y\x60',
+        'À': 'A\x60', 'È': 'E\x60', 'Ì': 'I\x60', 'Ò': 'O\x60', 'Ù': 'U\x60', 'Ỳ': 'Y\x60',
+        'ầ': 'a\x5E\x60', 'ề': 'e\x5E\x60', 'ồ': 'o\x5E\x60', 'ừ': 'u\x5E\x60',
+        'ằ': 'a\x7E\x60', 'ờ': 'o\x7E\x60',
+        
+        // Dấu sắc (acute)
+        'á': 'a\x27', 'é': 'e\x27', 'í': 'i\x27', 'ó': 'o\x27', 'ú': 'u\x27', 'ý': 'y\x27',
+        'Á': 'A\x27', 'É': 'E\x27', 'Í': 'I\x27', 'Ó': 'O\x27', 'Ú': 'U\x27', 'Ý': 'Y\x27',
+        'ấ': 'a\x5E\x27', 'ế': 'e\x5E\x27', 'ố': 'o\x5E\x27', 'ứ': 'u\x5E\x27',
+        'ắ': 'a\x7E\x27', 'ớ': 'o\x7E\x27',
+        
+        // Dấu ngã (tilde)
+        'ã': 'a\x7E', 'ẽ': 'e\x7E', 'ĩ': 'i\x7E', 'õ': 'o\x7E', 'ũ': 'u\x7E', 'ỹ': 'y\x7E',
+        'Ã': 'A\x7E', 'Ẽ': 'E\x7E', 'Ĩ': 'I\x7E', 'Õ': 'O\x7E', 'Ũ': 'U\x7E', 'Ỹ': 'Y\x7E',
+        'ẫ': 'a\x5E\x7E', 'ễ': 'e\x5E\x7E', 'ỗ': 'o\x5E\x7E', 'ữ': 'u\x5E\x7E',
+        'ẵ': 'a\x7E\x7E', 'ỡ': 'o\x7E\x7E',
+        
+        // Dấu hỏi (hook above) - dùng ?
+        'ả': 'a\x3F', 'ẻ': 'e\x3F', 'ỉ': 'i\x3F', 'ỏ': 'o\x3F', 'ủ': 'u\x3F', 'ỷ': 'y\x3F',
+        'ẩ': 'a\x5E\x3F', 'ể': 'e\x5E\x3F', 'ổ': 'o\x5E\x3F', 'ử': 'u\x5E\x3F',
+        'ẳ': 'a\x7E\x3F', 'ở': 'o\x7E\x3F',
+        
+        // Dấu nặng (dot below) - dùng .
+        'ạ': 'a.', 'ẹ': 'e.', 'ị': 'i.', 'ọ': 'o.', 'ụ': 'u.', 'ỵ': 'y.',
+        'ậ': 'a\x5E.', 'ệ': 'e\x5E.', 'ộ': 'o\x5E.', 'ự': 'u\x5E.',
+        'ặ': 'a\x7E.', 'ợ': 'o\x7E.',
+        
+        // Mũ (circumflex)
+        'â': 'a\x5E', 'ê': 'e\x5E', 'ô': 'o\x5E', 'û': 'u\x5E',
+        'Â': 'A\x5E', 'Ê': 'E\x5E', 'Ô': 'O\x5E', 'Û': 'U\x5E',
+        
+        // Breve - dùng ~
+        'ă': 'a~', 'Ă': 'A~',
+        
+        // Horn - dùng +
+        'ơ': 'o+', 'ư': 'u+', 'Ơ': 'O+', 'Ư': 'U+',
+        
+        // Đ đ
+        'đ': 'd-', 'Đ': 'D-'
+      };
+
+      let result = '';
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        if (compositeMap[char]) {
+          result += compositeMap[char];
+        } else {
+          result += char;
+        }
+      }
+      
+      return result;
+    }
     function removeDiacritics(text) {
       const diacriticsMap = {
         // Chữ thường
@@ -983,7 +1250,7 @@
       return `Thang ${month}/${year}`;
     }
 
-    // Format tiền tệ Việt Nam - Adaptive
+    // Format tiền tệ Việt Nam - Adaptive cho tất cả encoding modes
     function formatMoneyVietnam(amount) {
       if (!amount || amount === 0) return '0 d';
       
@@ -1053,7 +1320,7 @@
         return result + ' dong.';
         
       } else {
-        // Vietnamese with diacritics version  
+        // Vietnamese with diacritics version (cho tất cả encoding khác)
         const ones = ['', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
         const tens = ['', 'mười', 'hai mười', 'ba mười', 'bốn mười', 'năm mười', 
                      'sáu mười', 'bảy mười', 'tám mười', 'chín mười'];
