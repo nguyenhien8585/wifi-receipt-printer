@@ -490,7 +490,7 @@
       });
     });
 
-    // ==================== BLUETOOTH Y58 với TIẾNG VIỆT ====================
+    // ==================== BLUETOOTH Y58 ====================
     
     async function connectBluetooth() {
       if (!navigator.bluetooth) {
@@ -549,8 +549,8 @@
         updateBluetoothStatus(true, bluetoothDevice.name || 'Y58');
         showStatus('success', `✅ Đã kết nối ${bluetoothDevice.name || 'Y58'}!`);
         
-        // Test in với tiếng Việt
-        await testPrintVietnamese();
+        // Test in
+        await testPrintViettel();
 
       } catch (error) {
         console.error('Bluetooth error:', error);
@@ -559,28 +559,28 @@
       }
     }
 
-    // Test print với tiếng Việt có dấu
-    async function testPrintVietnamese() {
+    // Test print với format Viettel
+    async function testPrintViettel() {
       if (!bluetoothCharacteristic) return;
 
       const testData = 
-        '\n\n' +
-        '================================\n' +
-        '         VIETTEL\n' +
-        '    Theo cách của bạn\n' +
-        '   VIETTEL ĐỒNG THÁP\n' +
-        '      BIÊN NHẬN\n' +
+        '\n' +
+        'viettel\n' +
+        'Theo cách của bạn\n' +
+        'VIETTEL ĐỒNG THÁP\n' +
+        'BIÊN NHẬN\n' +
         '================================\n' +
         ' ✓ Máy in đã sẵn sàng!\n' +
-        ' ✓ Hỗ trợ tiếng Việt có dấu!\n' +
-        ` Thời gian: ${new Date().toLocaleString('vi-VN')}\n` +
+        ' ✓ Logo Viettel canh trái\n' +
+        ' ✓ Tiếng Việt có dấu OK!\n' +
+        ` ${new Date().toLocaleString('vi-VN')}\n` +
         '================================\n' +
         '\n\n';
 
-      await sendVietnameseToY58(testData);
+      await sendToY58(testData);
     }
 
-    // ==================== IN TIẾNG VIỆT CÓ DẤU CHO Y58 ====================
+    // ==================== IN PHIẾU THU GIỐNG ẢNH ====================
     
     async function printReceiptBluetooth(receiptData) {
       if (!bluetoothCharacteristic) {
@@ -588,100 +588,169 @@
       }
 
       try {
-        // ESC/POS commands để format text đẹp
-        const ESC = '\x1B';
-        const GS = '\x1D';
-        
         let receipt = '';
         
-        // Initialize printer
-        receipt += ESC + '@'; // Reset printer
-        receipt += ESC + 'a\x01'; // Center align
-        
-        // Header với font to
-        receipt += ESC + '!\x18'; // Double width and height
-        receipt += 'VIETTEL\n';
-        receipt += ESC + '!\x00'; // Normal size
+        // Header - Logo Viettel canh trái như trong ảnh
+        receipt += '\n';
+        receipt += 'viettel\n';                    // Logo canh trái
         receipt += 'Theo cách của bạn\n';
-        receipt += ESC + '!\x08'; // Bold
         receipt += 'VIETTEL ĐỒNG THÁP\n';
         receipt += 'BIÊN NHẬN\n';
-        receipt += ESC + '!\x00'; // Normal
-        
-        receipt += ESC + 'a\x00'; // Left align
         receipt += '================================\n';
         
-        // Thông tin khách hàng với tiếng Việt đầy đủ
+        // Thông tin khách hàng - y hệt layout trong ảnh
         receipt += 'Tên khách hàng:\n';
-        receipt += `✂ ${receiptData.name}\n`;
-        receipt += `Địa chỉ: ${receiptData.address}\n`;
-        receipt += `Thuê bao: ${receiptData.service}\n`;
-        receipt += `Nội dung: ${receiptData.content}\n`;
-        receipt += `Điện thoại liên hệ: ${receiptData.phone}\n`;
+        receipt += `${receiptData.name}\n`;
         
-        if (receiptData.invoice) {
-          receipt += `Mã HĐ: ${receiptData.invoice}\n`;
+        receipt += 'Địa chỉ: ';
+        // Xử lý địa chỉ dài - xuống dòng tự nhiên
+        const address = receiptData.address;
+        if (address.length > 30) {
+          const parts = address.split(' ');
+          let line = '';
+          for (const part of parts) {
+            if ((line + part).length > 30) {
+              receipt += line.trim() + '\n';
+              line = part + ' ';
+            } else {
+              line += part + ' ';
+            }
+          }
+          if (line.trim()) receipt += line.trim() + '\n';
+        } else {
+          receipt += address + '\n';
         }
         
-        receipt += `Ký cước: ${formatDate(new Date())}\n`;
+        receipt += 'Thuê bao:\n';
+        receipt += `    ${receiptData.service}\n`;
+        
+        receipt += 'Nội dung:\n';
+        receipt += `    ${receiptData.content}\n`;
+        
+        receipt += 'Điện thoại liên hệ:\n';
+        receipt += `    ${receiptData.phone}\n`;
+        
+        receipt += 'Ký cước:\n';
+        receipt += `    ${formatDateVietnam(new Date())}\n`;
+        
         receipt += '================================\n';
         
-        // Số tiền với font to
-        receipt += ESC + '!\x08'; // Bold
-        receipt += `Số tiền: ${formatMoney(receiptData.amount)}\n`;
-        receipt += ESC + '!\x00'; // Normal
-        receipt += `Bằng chữ: ${numberToWords(receiptData.amount)}\n`;
+        // Số tiền
+        receipt += `Số tiền: ${formatMoneyVietnam(receiptData.amount)}\n`;
+        receipt += `Bằng chữ: ${numberToVietnameseWords(receiptData.amount)}\n`;
         
         receipt += '================================\n';
-        receipt += ESC + 'a\x01'; // Center
+        
+        // Footer thông tin liên hệ
         receipt += 'SĐT liên hệ: 0978887797\n';
         receipt += 'Tổng đài cskh: 18008119\n';
         receipt += '\n';
-        receipt += '🙏 Cảm ơn quý khách! 🙏\n';
+        receipt += 'Cảm ơn quý khách!\n';
         receipt += '\n\n\n';
-        
-        // Cut paper command
-        receipt += GS + 'V\x00';
 
-        await sendVietnameseToY58(receipt);
+        await sendToY58(receipt);
 
       } catch (error) {
         throw new Error(`Lỗi in: ${error.message}`);
       }
     }
 
-    // Gửi tiếng Việt đến Y58 với UTF-8 encoding đúng cách
-    async function sendVietnameseToY58(text) {
+    // Gửi dữ liệu đến Y58 với encoding UTF-8 cho tiếng Việt
+    async function sendToY58(text) {
       if (!bluetoothCharacteristic) {
         throw new Error('Chưa kết nối Y58');
       }
 
       try {
-        // Sử dụng TextEncoder với UTF-8 (default)
-        const encoder = new TextEncoder();
+        // Sử dụng UTF-8 encoding cho tiếng Việt có dấu
+        const encoder = new TextEncoder('utf-8');
         const data = encoder.encode(text);
         
-        // Gửi từng chunk nhỏ để đảm bảo Y58 xử lý được
-        const chunkSize = 20; // Chunk size nhỏ cho Y58
-        
+        const chunkSize = 20;
         for (let i = 0; i < data.length; i += chunkSize) {
           const chunk = data.slice(i, i + chunkSize);
-          
-          // Thử gửi với writeWithoutResponse trước (nhanh hơn)
-          if (bluetoothCharacteristic.properties.writeWithoutResponse) {
-            await bluetoothCharacteristic.writeValueWithoutResponse(chunk);
-          } else {
-            await bluetoothCharacteristic.writeValue(chunk);
-          }
-          
-          // Delay nhỏ giữa các chunk để Y58 xử lý
-          await sleep(30);
+          await bluetoothCharacteristic.writeValue(chunk);
+          await sleep(40); // Delay để Y58 xử lý
         }
         
       } catch (error) {
         console.error('Y58 send error:', error);
         throw new Error('Lỗi gửi dữ liệu đến Y58');
       }
+    }
+
+    // Format ngày theo chuẩn Việt Nam như trong ảnh
+    function formatDateVietnam(date) {
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      return `Tháng ${month}/${year}`;
+    }
+
+    // Format tiền tệ Việt Nam
+    function formatMoneyVietnam(amount) {
+      if (!amount || amount === 0) return '0 đ';
+      return new Intl.NumberFormat('vi-VN').format(amount) + ' đ';
+    }
+
+    // Chuyển số thành chữ tiếng Việt có dấu đầy đủ
+    function numberToVietnameseWords(num) {
+      if (!num || num === 0) return 'Không đồng';
+      
+      const ones = ['', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
+      const tens = ['', 'mười', 'hai mười', 'ba mười', 'bốn mười', 'năm mười', 
+                   'sáu mười', 'bảy mười', 'tám mười', 'chín mười'];
+      const scales = ['', 'nghìn', 'triệu', 'tỷ'];
+      
+      function convertHundreds(n) {
+        let result = '';
+        
+        // Hàng trăm
+        if (n >= 100) {
+          result += ones[Math.floor(n / 100)] + ' trăm ';
+          n %= 100;
+        }
+        
+        // Hàng chục
+        if (n >= 20) {
+          const tenDigit = Math.floor(n / 10);
+          result += (tenDigit === 1 ? 'mười' : ones[tenDigit] + ' mười') + ' ';
+          n %= 10;
+        } else if (n >= 10) {
+          result += 'mười ';
+          n %= 10;
+        }
+        
+        // Hàng đơn vị
+        if (n > 0) {
+          // Xử lý số 5 sau 10, 20, 30... thành "lăm"
+          if (n === 5 && result.includes('mười')) {
+            result += 'lăm ';
+          } else {
+            result += ones[n] + ' ';
+          }
+        }
+        
+        return result;
+      }
+      
+      let result = '';
+      let scaleIndex = 0;
+      
+      while (num > 0) {
+        const chunk = num % 1000;
+        if (chunk !== 0) {
+          const chunkText = convertHundreds(chunk);
+          result = chunkText + scales[scaleIndex] + ' ' + result;
+        }
+        num = Math.floor(num / 1000);
+        scaleIndex++;
+      }
+      
+      // Làm sạch và viết hoa chữ cái đầu
+      result = result.trim().replace(/\s+/g, ' ');
+      result = result.charAt(0).toUpperCase() + result.slice(1);
+      
+      return result + ' đồng.';
     }
 
     function updateBluetoothStatus(connected, deviceName = '') {
@@ -907,7 +976,7 @@
       }
 
       try {
-        showStatus('loading', '🖨️ Đang in phiếu thu (Tiếng Việt)...');
+        showStatus('loading', '🖨️ Đang in phiếu thu Viettel...');
 
         await printReceiptBluetooth({
           name, address, phone, service, content, amount, invoice
@@ -946,49 +1015,6 @@
         style: 'currency', 
         currency: 'VND'
       }).format(amount).replace('₫', 'đ');
-    }
-
-    function formatDate(date) {
-      return `Tháng ${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
-    }
-
-    function numberToWords(num) {
-      if (!num || num === 0) return 'Không đồng';
-      
-      const ones = ['', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
-      const tens = ['', 'mười', 'hai mười', 'ba mười', 'bốn mười', 'năm mười', 'sáu mười', 'bảy mười', 'tám mười', 'chín mười'];
-      const scales = ['', 'nghìn', 'triệu', 'tỷ'];
-      
-      function convertHundreds(n) {
-        let result = '';
-        if (n >= 100) {
-          result += ones[Math.floor(n / 100)] + ' trăm ';
-          n %= 100;
-        }
-        if (n >= 20) {
-          result += tens[Math.floor(n / 10)].replace('mười', 'mươi') + ' ';
-          n %= 10;
-        } else if (n >= 10) {
-          result += 'mười ';
-          n %= 10;
-        }
-        if (n > 0) result += ones[n] + ' ';
-        return result;
-      }
-      
-      let result = '';
-      let scaleIndex = 0;
-      
-      while (num > 0) {
-        const chunk = num % 1000;
-        if (chunk !== 0) {
-          result = convertHundreds(chunk) + scales[scaleIndex] + ' ' + result;
-        }
-        num = Math.floor(num / 1000);
-        scaleIndex++;
-      }
-      
-      return result.trim() + ' đồng.';
     }
 
     function sleep(ms) {
