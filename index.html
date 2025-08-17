@@ -496,107 +496,125 @@
     // ==================== BLUETOOTH ====================
     
     async function connectBluetooth() {
-      if (!navigator.bluetooth) {
-        alert('❌ Trình duyệt không hỗ trợ Bluetooth!\n\n✅ Hãy sử dụng:\n• Chrome trên Android\n• Edge trên Windows\n• Safari trên iOS (mới)');
-        return;
-      }
+  if (!navigator.bluetooth) {
+    alert('❌ Trình duyệt không hỗ trợ Bluetooth!\n\n✅ Hãy sử dụng:\n• Chrome trên Android\n• Edge trên Windows');
+    return;
+  }
 
-      try {
-        if (bluetoothDevice && bluetoothDevice.gatt.connected) {
-          // Ngắt kết nối
-          bluetoothDevice.gatt.disconnect();
-          updateBluetoothStatus(false);
-          return;
-        }
-
-        showStatus('loading', '🔍 Đang tìm máy in Bluetooth...');
-        
-        bluetoothDevice = await navigator.bluetooth.requestDevice({
-          filters: [
-            { services: ['000018f0-0000-1000-8000-00805f9b34fb'] },
-            { services: ['0000ff00-0000-1000-8000-00805f9b34fb'] },
-            { namePrefix: 'MTP-' },
-            { namePrefix: 'BlueTooth Printer' },
-            { namePrefix: 'Printer' },
-            { namePrefix: 'POS-' },
-            { namePrefix: 'RP' }
-          ],
-          optionalServices: [
-            '000018f0-0000-1000-8000-00805f9b34fb',
-            '0000ff00-0000-1000-8000-00805f9b34fb',
-            '00001101-0000-1000-8000-00805f9b34fb'
-          ]
-        });
-
-        showStatus('loading', `📶 Đang kết nối với ${bluetoothDevice.name || 'máy in'}...`);
-
-        const server = await bluetoothDevice.gatt.connect();
-        
-        // Tìm service và characteristic
-        let service, characteristic;
-        const serviceUUIDs = [
-          '000018f0-0000-1000-8000-00805f9b34fb',
-          '0000ff00-0000-1000-8000-00805f9b34fb'
-        ];
-        
-        const characteristicUUIDs = [
-          '00002af1-0000-1000-8000-00805f9b34fb',
-          '0000ff01-0000-1000-8000-00805f9b34fb',
-          '0000ff02-0000-1000-8000-00805f9b34fb'
-        ];
-
-        for (const serviceUUID of serviceUUIDs) {
-          try {
-            service = await server.getPrimaryService(serviceUUID);
-            for (const charUUID of characteristicUUIDs) {
-              try {
-                characteristic = await service.getCharacteristic(charUUID);
-                break;
-              } catch (e) { continue; }
-            }
-            if (characteristic) break;
-          } catch (e) { continue; }
-        }
-
-        if (!characteristic) {
-          // Thử tìm bất kỳ characteristic nào có thể write
-          const services = await server.getPrimaryServices();
-          for (const svc of services) {
-            const characteristics = await svc.getCharacteristics();
-            characteristic = characteristics.find(c => c.properties.write);
-            if (characteristic) break;
-          }
-        }
-
-        if (!characteristic) {
-          throw new Error('Không tìm thấy characteristic phù hợp để in');
-        }
-
-        bluetoothCharacteristic = characteristic;
-        
-        // Lắng nghe disconnect
-        bluetoothDevice.addEventListener('gattserverdisconnected', () => {
-          updateBluetoothStatus(false);
-          showStatus('error', '📶 Máy in đã ngắt kết nối');
-        });
-        
-        updateBluetoothStatus(true, bluetoothDevice.name);
-        showStatus('success', `✅ Đã kết nối với ${bluetoothDevice.name || 'máy in'}!`);
-        
-        // In thử
-        await testPrint();
-
-      } catch (error) {
-        console.error('Bluetooth error:', error);
-        if (error.name === 'NotFoundError') {
-          showError('❌ Không tìm thấy máy in. Đảm bảo máy in đã bật và ở chế độ pairing.');
-        } else {
-          showError(`❌ Lỗi kết nối Bluetooth: ${error.message}`);
-        }
-        updateBluetoothStatus(false);
-      }
+  try {
+    if (bluetoothDevice && bluetoothDevice.gatt.connected) {
+      bluetoothDevice.gatt.disconnect();
+      updateBluetoothStatus(false);
+      return;
     }
 
+    showStatus('loading', '🔍 Đang tìm máy in Y58 Flashlabel...');
+    
+    // Tối ưu cho Y58 Flashlabel
+    bluetoothDevice = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true, // Quan trọng: Chấp nhận tất cả thiết bị
+      optionalServices: [
+        '000018f0-0000-1000-8000-00805f9b34fb',
+        '0000ff00-0000-1000-8000-00805f9b34fb', 
+        '00001101-0000-1000-8000-00805f9b34fb',
+        '0000180f-0000-1000-8000-00805f9b34fb', // Battery service
+        '0000180a-0000-1000-8000-00805f9b34fb'  // Device info
+      ]
+    });
+
+    showStatus('loading', `📶 Đang kết nối với ${bluetoothDevice.name || 'Y58'}...`);
+
+    const server = await bluetoothDevice.gatt.connect();
+    
+    // Tìm service cho Y58
+    let service, characteristic;
+    
+    try {
+      // Thử service phổ biến của Y58
+      const services = await server.getPrimaryServices();
+      console.log('Available services:', services.map(s => s.uuid));
+      
+      for (const svc of services) {
+        try {
+          const characteristics = await svc.getCharacteristics();
+          console.log(`Service ${svc.uuid} characteristics:`, characteristics.map(c => c.uuid));
+          
+          // Tìm characteristic có thể write
+          characteristic = characteristics.find(c => 
+            c.properties.write || c.properties.writeWithoutResponse
+          );
+          
+          if (characteristic) {
+            service = svc;
+            console.log('Found writable characteristic:', characteristic.uuid);
+            break;
+          }
+        } catch (e) {
+          continue;
+        }
+      }
+    } catch (e) {
+      console.error('Service discovery error:', e);
+    }
+
+    if (!characteristic) {
+      throw new Error('Không tìm thấy characteristic để in. Y58 có thể chưa sẵn sàng.');
+    }
+
+    bluetoothCharacteristic = characteristic;
+    
+    // Lắng nghe disconnect
+    bluetoothDevice.addEventListener('gattserverdisconnected', () => {
+      updateBluetoothStatus(false);
+      showStatus('error', '📶 Y58 đã ngắt kết nối');
+    });
+    
+    updateBluetoothStatus(true, bluetoothDevice.name || 'Y58');
+    showStatus('success', `✅ Đã kết nối với ${bluetoothDevice.name || 'Y58'}!`);
+    
+    // Test in ngay
+    await testPrintY58();
+
+  } catch (error) {
+    console.error('Y58 Bluetooth error:', error);
+    
+    if (error.name === 'NotFoundError') {
+      showError('❌ Không tìm thấy Y58!\n\n🔧 Thử:\n1. Reset Y58 (giữ Power 10s)\n2. Kích hoạt pairing (Power + Feed 5s)\n3. Đảm bảo đèn nhấp nháy\n4. Thử lại');
+    } else if (error.name === 'SecurityError') {
+      showError('❌ Lỗi bảo mật!\n\n🔧 Giải pháp:\n1. Vào Chrome Settings\n2. Privacy & Security > Site Settings\n3. Bluetooth > Allow\n4. Refresh trang');
+    } else {
+      showError(`❌ Lỗi Y58: ${error.message}\n\n💡 Thử reset Y58 và kết nối lại`);
+    }
+    updateBluetoothStatus(false);
+  }
+}
+
+// Test in đặc biệt cho Y58
+async function testPrintY58() {
+  if (!bluetoothCharacteristic) {
+    throw new Error('Chưa kết nối Y58');
+  }
+
+  const testText = 
+    '\n' +
+    '================================\n' +
+    '         Y58 TEST OK\n' +
+    '================================\n' +
+    ` Thoi gian: ${new Date().toLocaleString('vi-VN')}\n` +
+    ' San sang in phieu thu!\n' +
+    '================================\n' +
+    '\n\n';
+
+  const encoder = new TextEncoder();
+  const data = encoder.encode(testText);
+  
+  // Y58 cần gửi từng byte một lúc đầu
+  for (let i = 0; i < data.length; i++) {
+    await bluetoothCharacteristic.writeValue(data.slice(i, i + 1));
+    await sleep(10); // Delay nhỏ giữa từng byte
+  }
+}
+    
     async function testPrint() {
       if (!bluetoothCharacteristic) {
         throw new Error('Chưa kết nối máy in');
