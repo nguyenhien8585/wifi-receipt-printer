@@ -404,8 +404,15 @@
 <body>
   <div class="container">
     <div class="header">
-      <h1>🖨️ In Phiếu Thu Tiền WiFi (Fixed Tiếng Việt)</h1>
-      <div class="subtitle">Hệ thống in Bluetooth 58mm - Viettel Đồng Tháp - NO Chinese Characters!</div>
+      <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 10px;">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/6/63/Logo_Viettel_from_7_January_2021_Slogan.svg" 
+             alt="Viettel Logo" 
+             style="height: 40px; filter: brightness(0) invert(1);">
+        <div>
+          <h1 style="margin: 0; font-size: 24px;">In Phiếu Thu Tiền WiFi</h1>
+          <div class="subtitle">Hệ thống in Bluetooth 58mm - Viettel Đồng Tháp</div>
+        </div>
+      </div>
       <div class="bluetooth-status" id="bluetoothStatus">🔴 Bluetooth chưa kết nối</div>
     </div>
     
@@ -423,17 +430,17 @@
       <div class="config-row">
         <label>🔤 Encoding Mode:</label>
         <select id="encodingMode">
+          <option value="ascii-fallback">ASCII Safe (No Diacritics) - Recommended</option>
           <option value="vietnamese-safe">Vietnamese with Diacritics (UTF-8)</option>
           <option value="windows-1258">Windows-1258 (CP1258)</option>
-          <option value="ascii-fallback">ASCII Only (Remove Diacritics)</option>
         </select>
       </div>
       <div class="config-row">
         <label></label>
         <div class="encoding-info">
+          <strong>ASCII Safe:</strong> Bỏ dấu tiếng Việt, tương thích 100% máy in Y58 (như ảnh thực tế)<br>
           <strong>Vietnamese with Diacritics:</strong> Giữ nguyên tiếng Việt có dấu (UTF-8)<br>
-          <strong>Windows-1258:</strong> Encoding chuẩn Windows cho tiếng Việt<br>
-          <strong>ASCII Only:</strong> Bỏ dấu tiếng Việt (ă → a, ê → e, đ → d)
+          <strong>Windows-1258:</strong> Encoding chuẩn Windows cho tiếng Việt
         </div>
       </div>
       <div class="config-row">
@@ -463,7 +470,7 @@
         <span>🔧</span> Test Sheet
       </button>
       <button class="btn btn-primary" onclick="testVietnamesePrint()">
-        <span>🧪</span> Test Tiếng Việt
+        <span>🧪</span> Test In Mẫu
       </button>
     </div>
 
@@ -599,37 +606,33 @@
         showStatus('loading', '🧪 Đang test in tiếng Việt...');
         
         const testText = 
-          '\n\n' +
-          '      VIETTEL\n' +
-          '   Theo cách của bạn\n' +
-          '  VIETTEL ĐỒNG THÁP\n' +
-          '     TEST TIẾNG VIỆT\n' +
+          '\n' +
+          '     viettel\n' +
+          '  Theo cach cua ban\n' +
+          '\n' +
+          ' VIETTEL DONG THAP\n' +
+          '    BIEN NHAN\n' +
           '================================\n' +
-          'Tên khách hàng:\n' +
-          '  Nguyễn Văn Ắng\n' +
-          'Địa chỉ:\n' +
-          '  123 Đường Nguyễn Huệ,\n' +
-          '  Phường 1, TP. Cao Lãnh,\n' +
-          '  Đồng Tháp\n' +
-          'Điện thoại: 0901234567\n' +
-          'Thuê bao: FTTH 50Mbps\n' +
-          'Nội dung: Thu cước tháng 12/2024\n' +
-          'Số tiền: 100.000 đ\n' +
-          'Bằng chữ: Một trăm nghìn đồng.\n' +
-          '================================\n' +
-          'Test ký tự đặc biệt:\n' +
-          '  à á ả ã ạ ă ằ ắ ẳ ẵ ặ\n' +
-          '  â ầ ấ ẩ ẫ ậ è é ẻ ẽ ẹ\n' +
-          '  ê ề ế ể ễ ệ ì í ỉ ĩ ị\n' +
-          '  ò ó ỏ õ ọ ô ồ ố ổ ỗ ộ\n' +
-          '  ơ ờ ớ ở ỡ ợ ù ú ủ ũ ụ\n' +
-          '  ư ừ ứ ử ữ ự ỳ ý ỷ ỹ ỵ\n' +
-          '  đ Đ\n' +
-          '================================\n' +
-          ' ✓ Tiếng Việt có dấu thành công!\n' +
-          ` ✓ Encoding: ${encodingMode}\n` +
-          ` ✓ Thời gian: ${new Date().toLocaleString('vi-VN')}\n` +
-          '================================\n' +
+          'Ten khach hang:\n' +
+          'NGUYEN BAO CHI\n' +
+          'Dia chi: Phu Loi A Phu\n' +
+          'Thuan B Hong Ngu\n' +
+          'Dong Thap.\n' +
+          'Thue bao:\n' +
+          'd067_gftth_langd0\n' +
+          'Noi dung:\n' +
+          'Thu tien internet\n' +
+          'Dien thoai lien he:\n' +
+          '0822845232\n' +
+          'Ky cuoc:\n' +
+          'Thang 12/2024\n' +
+          'So tien: 200.000 d\n' +
+          'Bang chu: Hai tram ngan dong.\n' +
+          'SDT lien he: 0978887797\n' +
+          'Tong dai cskh: 18008119\n' +
+          '\n' +
+          ` Test thanh cong: ${encodingMode}\n` +
+          ` Thoi gian: ${new Date().toLocaleString('vi-VN')}\n` +
           '\n\n';
 
         await sendToYT58Printer(testText);
@@ -655,51 +658,54 @@
         receipt += '\x1B\x40'; // ESC @ - Reset printer
         await sleep(200);
         
-        // Header căn giữa
+        // Header với logo Viettel (text-based vì máy in nhiệt)
         receipt += '\x1B\x61\x01'; // Center align
-        receipt += '      VIETTEL\n';
-        receipt += '   Theo cách của bạn\n';
-        receipt += '  VIETTEL ĐỒNG THÁP\n';
-        receipt += '     BIÊN NHẬN\n';
+        receipt += '\n';
+        receipt += '     viettel\n';
+        receipt += '  Theo cach cua ban\n';
+        receipt += '\n';
+        receipt += ' VIETTEL DONG THAP\n';
+        receipt += '\x1B\x45\x01'; // Bold ON
+        receipt += '    BIEN NHAN\n';
+        receipt += '\x1B\x45\x00'; // Bold OFF
         receipt += '\x1B\x61\x00'; // Left align
         receipt += '================================\n';
         
-        // Thông tin khách hàng
-        receipt += 'Tên khách hàng:\n';
-        receipt += `  ${receiptData.name}\n`;
+        // Thông tin khách hàng - Format giống ảnh
+        receipt += 'Ten khach hang:\n';
+        receipt += `${receiptData.name}\n`;
         
-        receipt += 'Địa chỉ:\n';
+        receipt += 'Dia chi: ';
         const address = receiptData.address;
-        const addressLines = wrapText(address, 30);
-        for (const line of addressLines) {
-          receipt += `  ${line}\n`;
+        if (address.length > 25) {
+          const addressLines = wrapText(address, 25);
+          receipt += addressLines[0] + '\n';
+          for (let i = 1; i < addressLines.length; i++) {
+            receipt += addressLines[i] + '\n';
+          }
+        } else {
+          receipt += address + '\n';
         }
         
-        receipt += 'Điện thoại:\n';
-        receipt += `  ${receiptData.phone}\n`;
+        receipt += 'Thue bao:\n';
+        receipt += `${receiptData.service}\n`;
         
-        receipt += 'Thuê bao:\n';
-        receipt += `  ${receiptData.service}\n`;
+        receipt += 'Noi dung:\n';
+        receipt += `${receiptData.content}\n`;
         
-        receipt += 'Nội dung:\n';
-        receipt += `  ${receiptData.content}\n`;
+        receipt += 'Dien thoai lien he:\n';
+        receipt += `${receiptData.phone}\n`;
         
-        receipt += 'Ký cước:\n';
-        receipt += `  ${formatDateVietnam(new Date())}\n`;
+        receipt += 'Ky cuoc:\n';
+        receipt += `${formatDateVietnam(new Date())}\n`;
         
-        receipt += '================================\n';
+        // Số tiền - Format giống ảnh
+        receipt += `So tien: ${formatMoneyVietnam(receiptData.amount)}\n`;
+        receipt += `Bang chu: ${numberToVietnameseWords(receiptData.amount)}\n`;
         
-        // Số tiền
-        receipt += `Số tiền: ${formatMoneyVietnam(receiptData.amount)}\n`;
-        receipt += `Bằng chữ: ${numberToVietnameseWords(receiptData.amount)}\n`;
+        receipt += 'SDT lien he: 0978887797\n';
+        receipt += 'Tong dai cskh: 18008119\n';
         
-        receipt += '================================\n';
-        
-        // Footer
-        receipt += 'SĐT liên hệ: 0978887797\n';
-        receipt += 'Tổng đài CSKH: 18008119\n';
-        receipt += '\n';
-        receipt += 'Cảm ơn quý khách!\n';
         receipt += '\n\n\n';
 
         await sendToYT58Printer(receipt);
@@ -893,9 +899,42 @@
       return result;
     }
 
-    // REMOVE DIACRITICS - ASCII FALLBACK
+    // REMOVE DIACRITICS - ASCII SAFE (giống ảnh thực tế)
     function removeDiacritics(text) {
-      return convertToVietnameseSafe(text); // Same as Vietnamese Safe for this case
+      const diacriticsMap = {
+        // Chữ thường
+        'à': 'a', 'á': 'a', 'ả': 'a', 'ã': 'a', 'ạ': 'a',
+        'ă': 'a', 'ằ': 'a', 'ắ': 'a', 'ẳ': 'a', 'ẵ': 'a', 'ặ': 'a',
+        'â': 'a', 'ầ': 'a', 'ấ': 'a', 'ẩ': 'a', 'ẫ': 'a', 'ậ': 'a',
+        'è': 'e', 'é': 'e', 'ẻ': 'e', 'ẽ': 'e', 'ẹ': 'e',
+        'ê': 'e', 'ề': 'e', 'ế': 'e', 'ể': 'e', 'ễ': 'e', 'ệ': 'e',
+        'ì': 'i', 'í': 'i', 'ỉ': 'i', 'ĩ': 'i', 'ị': 'i',
+        'ò': 'o', 'ó': 'o', 'ỏ': 'o', 'õ': 'o', 'ọ': 'o',
+        'ô': 'o', 'ồ': 'o', 'ố': 'o', 'ổ': 'o', 'ỗ': 'o', 'ộ': 'o',
+        'ơ': 'o', 'ờ': 'o', 'ớ': 'o', 'ở': 'o', 'ỡ': 'o', 'ợ': 'o',
+        'ù': 'u', 'ú': 'u', 'ủ': 'u', 'ũ': 'u', 'ụ': 'u',
+        'ư': 'u', 'ừ': 'u', 'ứ': 'u', 'ử': 'u', 'ữ': 'u', 'ự': 'u',
+        'ỳ': 'y', 'ý': 'y', 'ỷ': 'y', 'ỹ': 'y', 'ỵ': 'y',
+        'đ': 'd',
+        
+        // Chữ hoa
+        'À': 'A', 'Á': 'A', 'Ả': 'A', 'Ã': 'A', 'Ạ': 'A',
+        'Ă': 'A', 'Ằ': 'A', 'Ắ': 'A', 'Ẳ': 'A', 'Ẵ': 'A', 'Ặ': 'A',
+        'Â': 'A', 'Ầ': 'A', 'Ấ': 'A', 'Ẩ': 'A', 'Ẫ': 'A', 'Ậ': 'A',
+        'È': 'E', 'É': 'E', 'Ẻ': 'E', 'Ẽ': 'E', 'Ẹ': 'E',
+        'Ê': 'E', 'Ề': 'E', 'Ế': 'E', 'Ể': 'E', 'Ễ': 'E', 'Ệ': 'E',
+        'Ì': 'I', 'Í': 'I', 'Ỉ': 'I', 'Ĩ': 'I', 'Ị': 'I',
+        'Ò': 'O', 'Ó': 'O', 'Ỏ': 'O', 'Õ': 'O', 'Ọ': 'O',
+        'Ô': 'O', 'Ồ': 'O', 'Ố': 'O', 'Ổ': 'O', 'Ỗ': 'O', 'Ộ': 'O',
+        'Ơ': 'O', 'Ờ': 'O', 'Ớ': 'O', 'Ở': 'O', 'Ỡ': 'O', 'Ợ': 'O',
+        'Ù': 'U', 'Ú': 'U', 'Ủ': 'U', 'Ũ': 'U', 'Ụ': 'U',
+        'Ư': 'U', 'Ừ': 'U', 'Ứ': 'U', 'Ử': 'U', 'Ữ': 'U', 'Ự': 'U',
+        'Ỳ': 'Y', 'Ý': 'Y', 'Ỷ': 'Y', 'Ỹ': 'Y', 'Ỵ': 'Y',
+        'Đ': 'D'
+      };
+
+      return text.replace(/[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđÀÁẢÃẠĂẰẮẲẴẶÂẦẤẨẪẬÈÉẺẼẸÊỀẾỂỄỆÌÍỈĨỊÒÓỎÕỌÔỒỐỔỖỘƠỜỚỞỠỢÙÚỦŨỤƯỪỨỬỮỰỲÝỶỸỴĐ]/g, 
+        char => diacriticsMap[char] || char);
     }
 
     // Convert text to byte array - Hỗ trợ tiếng Việt UTF-8
@@ -937,74 +976,135 @@
       return lines;
     }
 
-    // Format ngày theo chuẩn Việt Nam
+    // Format ngày theo chuẩn Việt Nam - giống ảnh thực tế
     function formatDateVietnam(date) {
-      const day = String(date.getDate()).padStart(2, '0');
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const year = date.getFullYear();
-      return `${day}/${month}/${year}`;
+      return `Thang ${month}/${year}`;
     }
 
-    // Format tiền tệ Việt Nam
+    // Format tiền tệ Việt Nam - Adaptive
     function formatMoneyVietnam(amount) {
       if (!amount || amount === 0) return '0 d';
-      return new Intl.NumberFormat('vi-VN').format(amount) + ' d';
+      
+      const encodingMode = document.getElementById('encodingMode').value;
+      const suffix = encodingMode === 'ascii-fallback' ? ' d' : ' đ';
+      
+      return new Intl.NumberFormat('vi-VN').format(amount) + suffix;
     }
 
-    // Chuyển số thành chữ tiếng Việt CÓ DẤU
+    // Chuyển số thành chữ tiếng Việt - Adaptive encoding
     function numberToVietnameseWords(num) {
-      if (!num || num === 0) return 'Không đồng';
+      if (!num || num === 0) return 'Khong dong';
       
-      const ones = ['', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
-      const tens = ['', 'mười', 'hai mười', 'ba mười', 'bốn mười', 'năm mười', 
-                   'sáu mười', 'bảy mười', 'tám mười', 'chín mười'];
-      const scales = ['', 'nghìn', 'triệu', 'tỷ'];
+      const encodingMode = document.getElementById('encodingMode').value;
       
-      function convertHundreds(n) {
-        let result = '';
+      if (encodingMode === 'ascii-fallback') {
+        // ASCII safe version
+        const ones = ['', 'mot', 'hai', 'ba', 'bon', 'nam', 'sau', 'bay', 'tam', 'chin'];
+        const tens = ['', 'muoi', 'hai muoi', 'ba muoi', 'bon muoi', 'nam muoi', 
+                     'sau muoi', 'bay muoi', 'tam muoi', 'chin muoi'];
+        const scales = ['', 'ngan', 'trieu', 'ty'];
         
-        if (n >= 100) {
-          result += ones[Math.floor(n / 100)] + ' trăm ';
-          n %= 100;
-        }
-        
-        if (n >= 20) {
-          const tenDigit = Math.floor(n / 10);
-          result += (tenDigit === 1 ? 'mười' : ones[tenDigit] + ' mười') + ' ';
-          n %= 10;
-        } else if (n >= 10) {
-          result += 'mười ';
-          n %= 10;
-        }
-        
-        if (n > 0) {
-          if (n === 5 && result.includes('mười')) {
-            result += 'lăm ';
-          } else {
-            result += ones[n] + ' ';
+        function convertHundreds(n) {
+          let result = '';
+          
+          if (n >= 100) {
+            result += ones[Math.floor(n / 100)] + ' tram ';
+            n %= 100;
           }
+          
+          if (n >= 20) {
+            const tenDigit = Math.floor(n / 10);
+            result += (tenDigit === 1 ? 'muoi' : ones[tenDigit] + ' muoi') + ' ';
+            n %= 10;
+          } else if (n >= 10) {
+            result += 'muoi ';
+            n %= 10;
+          }
+          
+          if (n > 0) {
+            if (n === 5 && result.includes('muoi')) {
+              result += 'lam ';
+            } else {
+              result += ones[n] + ' ';
+            }
+          }
+          
+          return result;
         }
         
-        return result;
-      }
-      
-      let result = '';
-      let scaleIndex = 0;
-      
-      while (num > 0) {
-        const chunk = num % 1000;
-        if (chunk !== 0) {
-          const chunkText = convertHundreds(chunk);
-          result = chunkText + scales[scaleIndex] + ' ' + result;
+        let result = '';
+        let scaleIndex = 0;
+        
+        while (num > 0) {
+          const chunk = num % 1000;
+          if (chunk !== 0) {
+            const chunkText = convertHundreds(chunk);
+            result = chunkText + scales[scaleIndex] + ' ' + result;
+          }
+          num = Math.floor(num / 1000);
+          scaleIndex++;
         }
-        num = Math.floor(num / 1000);
-        scaleIndex++;
+        
+        result = result.trim().replace(/\s+/g, ' ');
+        result = result.charAt(0).toUpperCase() + result.slice(1);
+        
+        return result + ' dong.';
+        
+      } else {
+        // Vietnamese with diacritics version  
+        const ones = ['', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
+        const tens = ['', 'mười', 'hai mười', 'ba mười', 'bốn mười', 'năm mười', 
+                     'sáu mười', 'bảy mười', 'tám mười', 'chín mười'];
+        const scales = ['', 'nghìn', 'triệu', 'tỷ'];
+        
+        function convertHundreds(n) {
+          let result = '';
+          
+          if (n >= 100) {
+            result += ones[Math.floor(n / 100)] + ' trăm ';
+            n %= 100;
+          }
+          
+          if (n >= 20) {
+            const tenDigit = Math.floor(n / 10);
+            result += (tenDigit === 1 ? 'mười' : ones[tenDigit] + ' mười') + ' ';
+            n %= 10;
+          } else if (n >= 10) {
+            result += 'mười ';
+            n %= 10;
+          }
+          
+          if (n > 0) {
+            if (n === 5 && result.includes('mười')) {
+              result += 'lăm ';
+            } else {
+              result += ones[n] + ' ';
+            }
+          }
+          
+          return result;
+        }
+        
+        let result = '';
+        let scaleIndex = 0;
+        
+        while (num > 0) {
+          const chunk = num % 1000;
+          if (chunk !== 0) {
+            const chunkText = convertHundreds(chunk);
+            result = chunkText + scales[scaleIndex] + ' ' + result;
+          }
+          num = Math.floor(num / 1000);
+          scaleIndex++;
+        }
+        
+        result = result.trim().replace(/\s+/g, ' ');
+        result = result.charAt(0).toUpperCase() + result.slice(1);
+        
+        return result + ' đồng.';
       }
-      
-      result = result.trim().replace(/\s+/g, ' ');
-      result = result.charAt(0).toUpperCase() + result.slice(1);
-      
-      return result + ' đồng.';
     }
 
     function updateBluetoothStatus(connected, deviceName = '') {
@@ -1196,7 +1296,7 @@
               ${printed ? 
                 '<div class="print-status">✅ Đã in rồi</div>' : 
                 `<button class="btn btn-danger" onclick="printReceipt('${escapeQuotes(name)}', '${escapeQuotes(address)}', '${phone}', '${escapeQuotes(service)}', '${escapeQuotes(content)}', ${amount}, '${invoice}', ${record.rowIndex})">
-                  <span>🖨️</span> In Tiếng Việt
+                  <span>🖨️</span> In Viettel
                 </button>`
               }
             </div>
