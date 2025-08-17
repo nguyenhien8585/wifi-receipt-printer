@@ -493,230 +493,212 @@
       });
     });
 
-    // ==================== BLUETOOTH ====================
+    // ==================== BLUETOOTH Y58 FIX ====================
     
     async function connectBluetooth() {
-  if (!navigator.bluetooth) {
-    alert('❌ Trình duyệt không hỗ trợ Bluetooth!\n\n✅ Hãy sử dụng:\n• Chrome trên Android\n• Edge trên Windows');
-    return;
-  }
-
-  try {
-    if (bluetoothDevice && bluetoothDevice.gatt.connected) {
-      bluetoothDevice.gatt.disconnect();
-      updateBluetoothStatus(false);
-      return;
-    }
-
-    showStatus('loading', '🔍 Đang tìm máy in Y58 Flashlabel...');
-    
-    // Tối ưu cho Y58 Flashlabel
-    bluetoothDevice = await navigator.bluetooth.requestDevice({
-      acceptAllDevices: true, // Quan trọng: Chấp nhận tất cả thiết bị
-      optionalServices: [
-        '000018f0-0000-1000-8000-00805f9b34fb',
-        '0000ff00-0000-1000-8000-00805f9b34fb', 
-        '00001101-0000-1000-8000-00805f9b34fb',
-        '0000180f-0000-1000-8000-00805f9b34fb', // Battery service
-        '0000180a-0000-1000-8000-00805f9b34fb'  // Device info
-      ]
-    });
-
-    showStatus('loading', `📶 Đang kết nối với ${bluetoothDevice.name || 'Y58'}...`);
-
-    const server = await bluetoothDevice.gatt.connect();
-    
-    // Tìm service cho Y58
-    let service, characteristic;
-    
-    try {
-      // Thử service phổ biến của Y58
-      const services = await server.getPrimaryServices();
-      console.log('Available services:', services.map(s => s.uuid));
-      
-      for (const svc of services) {
-        try {
-          const characteristics = await svc.getCharacteristics();
-          console.log(`Service ${svc.uuid} characteristics:`, characteristics.map(c => c.uuid));
-          
-          // Tìm characteristic có thể write
-          characteristic = characteristics.find(c => 
-            c.properties.write || c.properties.writeWithoutResponse
-          );
-          
-          if (characteristic) {
-            service = svc;
-            console.log('Found writable characteristic:', characteristic.uuid);
-            break;
-          }
-        } catch (e) {
-          continue;
-        }
+      if (!navigator.bluetooth) {
+        alert('❌ Trình duyệt không hỗ trợ Bluetooth!\n\n✅ Hãy sử dụng:\n• Chrome trên Android\n• Edge trên Windows');
+        return;
       }
-    } catch (e) {
-      console.error('Service discovery error:', e);
+
+      try {
+        if (bluetoothDevice && bluetoothDevice.gatt.connected) {
+          bluetoothDevice.gatt.disconnect();
+          updateBluetoothStatus(false);
+          return;
+        }
+
+        showStatus('loading', '🔍 Tìm máy in Y58...');
+        
+        bluetoothDevice = await navigator.bluetooth.requestDevice({
+          acceptAllDevices: true,
+          optionalServices: [
+            '000018f0-0000-1000-8000-00805f9b34fb', // Y58 main service
+            '0000ff00-0000-1000-8000-00805f9b34fb',
+            '00001101-0000-1000-8000-00805f9b34fb', // SPP
+            '0000180f-0000-1000-8000-00805f9b34fb'
+          ]
+        });
+
+        showStatus('loading', `📶 Kết nối ${bluetoothDevice.name || 'Y58'}...`);
+
+        const server = await bluetoothDevice.gatt.connect();
+        
+        // Tìm service và characteristic cho Y58
+        const services = await server.getPrimaryServices();
+        let foundCharacteristic = null;
+        
+        for (const service of services) {
+          try {
+            const characteristics = await service.getCharacteristics();
+            // Tìm characteristic có thể write
+            foundCharacteristic = characteristics.find(c => 
+              c.properties.write || c.properties.writeWithoutResponse
+            );
+            if (foundCharacteristic) break;
+          } catch (e) {
+            continue;
+          }
+        }
+
+        if (!foundCharacteristic) {
+          throw new Error('Không tìm thấy characteristic để in');
+        }
+
+        bluetoothCharacteristic = foundCharacteristic;
+        
+        bluetoothDevice.addEventListener('gattserverdisconnected', () => {
+          updateBluetoothStatus(false);
+          showStatus('error', '📶 Máy in đã ngắt kết nối');
+        });
+        
+        updateBluetoothStatus(true, bluetoothDevice.name || 'Y58');
+        showStatus('success', `✅ Đã kết nối ${bluetoothDevice.name || 'Y58'}!`);
+        
+        // Test in ngay
+        await testPrintY58();
+
+      } catch (error) {
+        console.error('Bluetooth error:', error);
+        
+        let errorMsg = '❌ Lỗi kết nối máy in!';
+        if (error.name === 'NotFoundError') {
+          errorMsg = '❌ Không tìm thấy máy in!\n\n🔧 Hướng dẫn:\n1. Bật máy in Y58\n2. Nhấn giữ nút nguồn 3s (đèn nhấp nháy)\n3. Thử lại';
+        } else if (error.name === 'SecurityError') {
+          errorMsg = '❌ Lỗi bảo mật!\n\nVào Settings > Site permissions > Bluetooth > Allow';
+        }
+        
+        showError(errorMsg);
+        updateBluetoothStatus(false);
+      }
     }
 
-    if (!characteristic) {
-      throw new Error('Không tìm thấy characteristic để in. Y58 có thể chưa sẵn sàng.');
+    async function testPrintY58() {
+      if (!bluetoothCharacteristic) return;
+
+      const testData = 
+        '\n\n' +
+        '================================\n' +
+        '      TEST PRINT Y58 OK\n' +
+        '================================\n' +
+        ' May in da san sang!\n' +
+        ` ${new Date().toLocaleString('vi-VN')}\n` +
+        '================================\n' +
+        '\n\n';
+
+      await sendToY58(testData);
     }
 
-    bluetoothCharacteristic = characteristic;
+    // ==================== FIX FONT CHO Y58 ====================
     
-    // Lắng nghe disconnect
-    bluetoothDevice.addEventListener('gattserverdisconnected', () => {
-      updateBluetoothStatus(false);
-      showStatus('error', '📶 Y58 đã ngắt kết nối');
-    });
-    
-    updateBluetoothStatus(true, bluetoothDevice.name || 'Y58');
-    showStatus('success', `✅ Đã kết nối với ${bluetoothDevice.name || 'Y58'}!`);
-    
-    // Test in ngay
-    await testPrintY58();
-
-  } catch (error) {
-    console.error('Y58 Bluetooth error:', error);
-    
-    if (error.name === 'NotFoundError') {
-      showError('❌ Không tìm thấy Y58!\n\n🔧 Thử:\n1. Reset Y58 (giữ Power 10s)\n2. Kích hoạt pairing (Power + Feed 5s)\n3. Đảm bảo đèn nhấp nháy\n4. Thử lại');
-    } else if (error.name === 'SecurityError') {
-      showError('❌ Lỗi bảo mật!\n\n🔧 Giải pháp:\n1. Vào Chrome Settings\n2. Privacy & Security > Site Settings\n3. Bluetooth > Allow\n4. Refresh trang');
-    } else {
-      showError(`❌ Lỗi Y58: ${error.message}\n\n💡 Thử reset Y58 và kết nối lại`);
-    }
-    updateBluetoothStatus(false);
-  }
-}
-
-// Test in đặc biệt cho Y58
-async function testPrintY58() {
-  if (!bluetoothCharacteristic) {
-    throw new Error('Chưa kết nối Y58');
-  }
-
-  const testText = 
-    '\n' +
-    '================================\n' +
-    '         Y58 TEST OK\n' +
-    '================================\n' +
-    ` Thoi gian: ${new Date().toLocaleString('vi-VN')}\n` +
-    ' San sang in phieu thu!\n' +
-    '================================\n' +
-    '\n\n';
-
-  const encoder = new TextEncoder();
-  const data = encoder.encode(testText);
-  
-  // Y58 cần gửi từng byte một lúc đầu
-  for (let i = 0; i < data.length; i++) {
-    await bluetoothCharacteristic.writeValue(data.slice(i, i + 1));
-    await sleep(10); // Delay nhỏ giữa từng byte
-  }
-}
-    
-    async function testPrint() {
+    async function printReceiptBluetooth(receiptData) {
       if (!bluetoothCharacteristic) {
         throw new Error('Chưa kết nối máy in');
       }
 
-      const testText = 
-        '\n\n' +
-        '================================\n' +
-        '         TEST PRINT\n' +
-        '================================\n' +
-        ' ✅ Máy in đã sẵn sàng!\n' +
-        ` ⏰ ${new Date().toLocaleString('vi-VN')}\n` +
-        '================================\n' +
-        ' 🖨️ Hệ thống in phiếu WiFi\n' +
-        ' 📞 Hotline: 0978887797\n' +
-        '================================\n' +
-        '\n\n\n';
-
-      const encoder = new TextEncoder();
-      const data = encoder.encode(testText);
-      
-      // Gửi từng chunk nhỏ
-      const chunkSize = 20;
-      for (let i = 0; i < data.length; i += chunkSize) {
-        const chunk = data.slice(i, i + chunkSize);
-        await bluetoothCharacteristic.writeValue(chunk);
-        await sleep(50); // Delay nhỏ giữa các chunk
-      }
-    }
-
-    async function printReceiptBluetooth(receiptData) {
-      if (!bluetoothCharacteristic) {
-        throw new Error('Chưa kết nối máy in Bluetooth');
-      }
-
       try {
-        // ESC/POS commands
-        const ESC = '\x1B';
-        const GS = '\x1D';
-        
+        // Chuẩn bị dữ liệu in với font đơn giản cho Y58
         let printData = '';
         
-        // Initialize printer
-        printData += ESC + '@'; // Initialize
-        printData += ESC + 'a' + '\x01'; // Center align
+        // ESC/POS commands cơ bản
+        printData += '\x1B@'; // Reset printer
+        printData += '\x1Ba\x01'; // Center align
         
-        // Header
-        printData += ESC + '!' + '\x18'; // Double size
+        // Header - chỉ dùng ký tự ASCII và tiếng Việt cơ bản
+        printData += '\x1B!\x18'; // Double size
         printData += 'VIETTEL\n';
-        printData += ESC + '!' + '\x00'; // Normal size
-        printData += 'Theo cách của bạn\n';
-        printData += ESC + '!' + '\x08'; // Bold
-        printData += 'VIETTEL ĐỒNG THÁP\n';
-        printData += 'BIÊN NHẬN\n';
-        printData += ESC + '!' + '\x00'; // Normal
+        printData += '\x1B!\x00'; // Normal size
+        printData += 'Theo cach cua ban\n';
+        printData += '\x1B!\x08'; // Bold
+        printData += 'VIETTEL DONG THAP\n';
+        printData += 'BIEN NHAN\n';
+        printData += '\x1B!\x00'; // Normal
         
-        printData += ESC + 'a' + '\x00'; // Left align
-        printData += '--------------------------------\n';
+        printData += '\x1Ba\x00'; // Left align
+        printData += '================================\n';
         
-        // Content với ký tự đặc biệt
-        printData += 'Tên khách hàng:\n';
-        printData += `✂ ${receiptData.name}\n`;
-        printData += `Địa chỉ: ${receiptData.address}\n`;
-        printData += `Thuê bao: ${receiptData.service}\n`;
-        printData += `Nội dung: ${receiptData.content}\n`;
-        printData += `Điện thoại: ${receiptData.phone}\n`;
+        // Nội dung - chuyển ký tự đặc biệt thành ASCII
+        printData += convertToSafeText('Ten khach hang:\n');
+        printData += convertToSafeText(`> ${receiptData.name}\n`);
+        printData += convertToSafeText(`Dia chi: ${receiptData.address}\n`);
+        printData += convertToSafeText(`Thue bao: ${receiptData.service}\n`);
+        printData += convertToSafeText(`Noi dung: ${receiptData.content}\n`);
+        printData += convertToSafeText(`Dien thoai: ${receiptData.phone}\n`);
+        
         if (receiptData.invoice) {
-          printData += `Mã HĐ: ${receiptData.invoice}\n`;
+          printData += convertToSafeText(`Ma HD: ${receiptData.invoice}\n`);
         }
-        printData += `Ký cước: ${new Date().toLocaleDateString('vi-VN')}\n`;
-        printData += '--------------------------------\n';
+        
+        printData += convertToSafeText(`Ky cuoc: ${new Date().toLocaleDateString('vi-VN')}\n`);
+        printData += '================================\n';
         
         // Số tiền
-        printData += ESC + '!' + '\x08'; // Bold
-        printData += `Số tiền: ${formatMoney(receiptData.amount)}\n`;
-        printData += ESC + '!' + '\x00'; // Normal
-        printData += `Bằng chữ: ${numberToWords(receiptData.amount)}\n`;
+        printData += '\x1B!\x08'; // Bold
+        printData += convertToSafeText(`So tien: ${formatMoney(receiptData.amount)}\n`);
+        printData += '\x1B!\x00'; // Normal
+        printData += convertToSafeText(`Bang chu: ${numberToWords(receiptData.amount)}\n`);
         
-        printData += '--------------------------------\n';
-        printData += ESC + 'a' + '\x01'; // Center
-        printData += 'SĐT: 0978887797\n';
-        printData += 'Tổng đài: 18008119\n';
+        printData += '================================\n';
+        printData += '\x1Ba\x01'; // Center
+        printData += convertToSafeText('SDT: 0978887797\n');
+        printData += convertToSafeText('Tong dai: 18008119\n');
         printData += '\n';
-        printData += '🙏 Cảm ơn quý khách! 🙏\n';
+        printData += convertToSafeText('Cam on quy khach!\n');
         printData += '\n\n\n';
         
-        // Cut paper (nếu máy in hỗ trợ)
-        printData += GS + 'V' + '\x00';
+        // Cut paper
+        printData += '\x1DVA\x00';
 
-        // Encode và gửi dữ liệu
-        const encoder = new TextEncoder();
-        const data = encoder.encode(printData);
-        
-        const chunkSize = 20; // Chunk size nhỏ để tương thích tốt hơn
-        for (let i = 0; i < data.length; i += chunkSize) {
-          const chunk = data.slice(i, i + chunkSize);
-          await bluetoothCharacteristic.writeValue(chunk);
-          await sleep(50); // Delay giữa các chunk
-        }
+        await sendToY58(printData);
 
       } catch (error) {
         throw new Error(`Lỗi in: ${error.message}`);
+      }
+    }
+
+    // Chuyển đổi text thành ký tự an toàn cho Y58
+    function convertToSafeText(text) {
+      return text
+        // Loại bỏ dấu tiếng Việt phức tạp
+        .replace(/[àáạảãâầấậẩẫăằắặẳẵ]/g, 'a')
+        .replace(/[èéẹẻẽêềếệểễ]/g, 'e')
+        .replace(/[ìíịỉĩ]/g, 'i')
+        .replace(/[òóọỏõôồốộổỗơờớợởỡ]/g, 'o')
+        .replace(/[ùúụủũưừứựửữ]/g, 'u')
+        .replace(/[ỳýỵỷỹ]/g, 'y')
+        .replace(/đ/g, 'd')
+        .replace(/[ÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴ]/g, 'A')
+        .replace(/[ÈÉẸẺẼÊỀẾỆỂỄ]/g, 'E')
+        .replace(/[ÌÍỊỈĨ]/g, 'I')
+        .replace(/[ÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠ]/g, 'O')
+        .replace(/[ÙÚỤỦŨƯỪỨỰỬỮ]/g, 'U')
+        .replace(/[ỲÝỴỶỸ]/g, 'Y')
+        .replace(/Đ/g, 'D')
+        // Loại bỏ emoji và ký tự đặc biệt
+        .replace(/[^\x00-\x7F]/g, '');
+    }
+
+    // Gửi dữ liệu đến Y58 với xử lý lỗi font
+    async function sendToY58(data) {
+      if (!bluetoothCharacteristic) {
+        throw new Error('Chưa kết nối Y58');
+      }
+
+      try {
+        const encoder = new TextEncoder();
+        const bytes = encoder.encode(data);
+        
+        // Gửi từng chunk nhỏ để tránh lỗi buffer
+        const chunkSize = 20;
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+          const chunk = bytes.slice(i, i + chunkSize);
+          await bluetoothCharacteristic.writeValue(chunk);
+          await sleep(30); // Delay nhỏ giữa các chunk
+        }
+        
+      } catch (error) {
+        console.error('Y58 send error:', error);
+        throw new Error('Lỗi gửi dữ liệu đến Y58');
       }
     }
 
@@ -763,7 +745,6 @@ async function testPrintY58() {
       const sheetId = document.getElementById('sheetId').value.trim();
       const sheetName = document.getElementById('sheetName').value.trim() || 'Sheet1';
       
-      // Sử dụng Google Sheets CSV export (công khai)
       const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
       
       const response = await fetch(url, {
@@ -803,9 +784,8 @@ async function testPrintY58() {
           const char = line[i];
           if (char === '"') {
             if (inQuotes && line[i + 1] === '"') {
-              // Escaped quote
               current += '"';
-              i++; // Skip next quote
+              i++;
             } else {
               inQuotes = !inQuotes;
             }
@@ -838,7 +818,7 @@ async function testPrintY58() {
         );
         
         allRecords = rows.map((row, index) => ({
-          rowIndex: index + 2, // +2 vì header ở row 1, data bắt đầu từ row 2
+          rowIndex: index + 2,
           data: row,
           headers: headers
         }));
@@ -873,7 +853,6 @@ async function testPrintY58() {
         const row = record.data;
         const headers = record.headers;
         
-        // Tự động phát hiện các cột
         const nameIdx = findColumnIndex(headers, ['tên', 'khách hàng', 'name']);
         const addressIdx = findColumnIndex(headers, ['địa chỉ', 'address', 'diachi']);
         const phoneIdx = findColumnIndex(headers, ['điện thoại', 'phone', 'sdt', 'dienthoai', 'liên hệ']);
@@ -912,7 +891,7 @@ async function testPrintY58() {
               ${printed ? 
                 '<div class="print-status">✅ Đã in rồi</div>' : 
                 `<button class="btn btn-danger" onclick="printReceipt('${escapeQuotes(name)}', '${escapeQuotes(address)}', '${phone}', '${escapeQuotes(service)}', '${escapeQuotes(content)}', ${amount}, '${invoice}', ${record.rowIndex})">
-                  <span>🖨️</span> In Bluetooth
+                  <span>🖨️</span> In Y58
                 </button>`
               }
             </div>
@@ -928,7 +907,7 @@ async function testPrintY58() {
         );
         if (index !== -1) return index;
       }
-      return -1; // Không tìm thấy
+      return -1;
     }
 
     function escapeQuotes(str) {
@@ -937,7 +916,7 @@ async function testPrintY58() {
 
     async function printReceipt(name, address, phone, service, content, amount, invoice, rowIndex) {
       if (!bluetoothCharacteristic) {
-        if (confirm('❌ Chưa kết nối máy in Bluetooth!\n\n📶 Bạn có muốn kết nối ngay không?')) {
+        if (confirm('❌ Chưa kết nối máy in Y58!\n\n📶 Bạn có muốn kết nối ngay không?')) {
           await connectBluetooth();
           if (!bluetoothCharacteristic) return;
         } else {
@@ -953,9 +932,6 @@ async function testPrintY58() {
         });
 
         showStatus('success', `✅ Đã in thành công phiếu của ${name}!`);
-        
-        // TODO: Có thể thêm tính năng cập nhật "Đã in" vào Google Sheets
-        // Hiện tại chỉ thông báo thành công
 
       } catch (error) {
         console.error('Print error:', error);
@@ -991,23 +967,23 @@ async function testPrintY58() {
     }
 
     function numberToWords(num) {
-      if (!num || num === 0) return 'Không đồng';
+      if (!num || num === 0) return 'Khong dong';
       
-      const ones = ['', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
-      const tens = ['', 'mười', 'hai mười', 'ba mười', 'bốn mười', 'năm mười', 'sáu mười', 'bảy mười', 'tám mười', 'chín mười'];
-      const scales = ['', 'nghìn', 'triệu', 'tỷ'];
+      const ones = ['', 'mot', 'hai', 'ba', 'bon', 'nam', 'sau', 'bay', 'tam', 'chin'];
+      const tens = ['', 'muoi', 'hai muoi', 'ba muoi', 'bon muoi', 'nam muoi', 'sau muoi', 'bay muoi', 'tam muoi', 'chin muoi'];
+      const scales = ['', 'nghin', 'trieu', 'ty'];
       
       function convertHundreds(n) {
         let result = '';
         if (n >= 100) {
-          result += ones[Math.floor(n / 100)] + ' trăm ';
+          result += ones[Math.floor(n / 100)] + ' tram ';
           n %= 100;
         }
         if (n >= 20) {
-          result += tens[Math.floor(n / 10)].replace('mười', 'mươi') + ' ';
+          result += tens[Math.floor(n / 10)].replace('muoi', 'muoi') + ' ';
           n %= 10;
         } else if (n >= 10) {
-          result += 'mười ';
+          result += 'muoi ';
           n %= 10;
         }
         if (n > 0) result += ones[n] + ' ';
@@ -1026,7 +1002,7 @@ async function testPrintY58() {
         scaleIndex++;
       }
       
-      return result.trim() + ' đồng';
+      return result.trim() + ' dong';
     }
 
     function sleep(ms) {
