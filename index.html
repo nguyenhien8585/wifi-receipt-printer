@@ -472,18 +472,15 @@
     // ==================== KHỞI TẠO ====================
     
     document.addEventListener('DOMContentLoaded', function() {
-      // Kiểm tra hỗ trợ Bluetooth
       if (!navigator.bluetooth) {
         document.getElementById('noBluetoothWarning').style.display = 'block';
         document.getElementById('bluetoothBtn').disabled = true;
       }
       
-      // Enter để search
       document.getElementById('searchInput').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') search();
       });
       
-      // Auto-save config
       ['sheetId', 'sheetName'].forEach(id => {
         const input = document.getElementById(id);
         input.value = localStorage.getItem(id) || input.value;
@@ -493,7 +490,7 @@
       });
     });
 
-    // ==================== BLUETOOTH Y58 FIX ====================
+    // ==================== BLUETOOTH Y58 FIX TRIỆT ĐỂ ====================
     
     async function connectBluetooth() {
       if (!navigator.bluetooth) {
@@ -513,9 +510,9 @@
         bluetoothDevice = await navigator.bluetooth.requestDevice({
           acceptAllDevices: true,
           optionalServices: [
-            '000018f0-0000-1000-8000-00805f9b34fb', // Y58 main service
+            '000018f0-0000-1000-8000-00805f9b34fb',
             '0000ff00-0000-1000-8000-00805f9b34fb',
-            '00001101-0000-1000-8000-00805f9b34fb', // SPP
+            '00001101-0000-1000-8000-00805f9b34fb',
             '0000180f-0000-1000-8000-00805f9b34fb'
           ]
         });
@@ -523,15 +520,12 @@
         showStatus('loading', `📶 Kết nối ${bluetoothDevice.name || 'Y58'}...`);
 
         const server = await bluetoothDevice.gatt.connect();
-        
-        // Tìm service và characteristic cho Y58
         const services = await server.getPrimaryServices();
         let foundCharacteristic = null;
         
         for (const service of services) {
           try {
             const characteristics = await service.getCharacteristics();
-            // Tìm characteristic có thể write
             foundCharacteristic = characteristics.find(c => 
               c.properties.write || c.properties.writeWithoutResponse
             );
@@ -555,150 +549,179 @@
         updateBluetoothStatus(true, bluetoothDevice.name || 'Y58');
         showStatus('success', `✅ Đã kết nối ${bluetoothDevice.name || 'Y58'}!`);
         
-        // Test in ngay
-        await testPrintY58();
+        // Test in với ASCII thuần
+        await testPrintASCII();
 
       } catch (error) {
         console.error('Bluetooth error:', error);
-        
-        let errorMsg = '❌ Lỗi kết nối máy in!';
-        if (error.name === 'NotFoundError') {
-          errorMsg = '❌ Không tìm thấy máy in!\n\n🔧 Hướng dẫn:\n1. Bật máy in Y58\n2. Nhấn giữ nút nguồn 3s (đèn nhấp nháy)\n3. Thử lại';
-        } else if (error.name === 'SecurityError') {
-          errorMsg = '❌ Lỗi bảo mật!\n\nVào Settings > Site permissions > Bluetooth > Allow';
-        }
-        
-        showError(errorMsg);
+        showError(`❌ Lỗi kết nối: ${error.message || 'Không thể kết nối Y58'}`);
         updateBluetoothStatus(false);
       }
     }
 
-    async function testPrintY58() {
+    // Test print chỉ dùng ASCII thuần
+    async function testPrintASCII() {
       if (!bluetoothCharacteristic) return;
 
+      // Chỉ dùng ASCII thuần, không có ký tự đặc biệt
       const testData = 
         '\n\n' +
         '================================\n' +
         '      TEST PRINT Y58 OK\n' +
         '================================\n' +
         ' May in da san sang!\n' +
-        ` ${new Date().toLocaleString('vi-VN')}\n` +
+        ' ASCII mode - font fix!\n' +
+        ` ${new Date().toLocaleString('en-GB')}\n` +
         '================================\n' +
         '\n\n';
 
-      await sendToY58(testData);
+      await sendRawBytesToY58(testData);
     }
 
-    // ==================== FIX FONT CHO Y58 ====================
+    // ==================== FIX TRIỆT ĐỂ FONT CHO Y58 ====================
     
     async function printReceiptBluetooth(receiptData) {
       if (!bluetoothCharacteristic) {
-        throw new Error('Chưa kết nối máy in');
+        throw new Error('Chua ket noi may in');
       }
 
       try {
-        // Chuẩn bị dữ liệu in với font đơn giản cho Y58
-        let printData = '';
+        // Tạo receipt chỉ với ASCII thuần, không dùng ESC/POS phức tạp
+        let receipt = '';
         
-        // ESC/POS commands cơ bản
-        printData += '\x1B@'; // Reset printer
-        printData += '\x1Ba\x01'; // Center align
+        // Header đơn giản
+        receipt += '\n\n';
+        receipt += '    VIETTEL DONG THAP\n';
+        receipt += '      BIEN NHAN\n';
+        receipt += '================================\n';
         
-        // Header - chỉ dùng ký tự ASCII và tiếng Việt cơ bản
-        printData += '\x1B!\x18'; // Double size
-        printData += 'VIETTEL\n';
-        printData += '\x1B!\x00'; // Normal size
-        printData += 'Theo cach cua ban\n';
-        printData += '\x1B!\x08'; // Bold
-        printData += 'VIETTEL DONG THAP\n';
-        printData += 'BIEN NHAN\n';
-        printData += '\x1B!\x00'; // Normal
-        
-        printData += '\x1Ba\x00'; // Left align
-        printData += '================================\n';
-        
-        // Nội dung - chuyển ký tự đặc biệt thành ASCII
-        printData += convertToSafeText('Ten khach hang:\n');
-        printData += convertToSafeText(`> ${receiptData.name}\n`);
-        printData += convertToSafeText(`Dia chi: ${receiptData.address}\n`);
-        printData += convertToSafeText(`Thue bao: ${receiptData.service}\n`);
-        printData += convertToSafeText(`Noi dung: ${receiptData.content}\n`);
-        printData += convertToSafeText(`Dien thoai: ${receiptData.phone}\n`);
+        // Thông tin khách hàng - chuyển hết sang ASCII
+        receipt += 'Ten KH: ' + toASCII(receiptData.name) + '\n';
+        receipt += 'Dia chi: ' + toASCII(receiptData.address) + '\n';
+        receipt += 'SDT: ' + receiptData.phone + '\n';
+        receipt += 'Thue bao: ' + toASCII(receiptData.service) + '\n';
+        receipt += 'Noi dung: ' + toASCII(receiptData.content) + '\n';
         
         if (receiptData.invoice) {
-          printData += convertToSafeText(`Ma HD: ${receiptData.invoice}\n`);
+          receipt += 'Ma HD: ' + receiptData.invoice + '\n';
         }
         
-        printData += convertToSafeText(`Ky cuoc: ${new Date().toLocaleDateString('vi-VN')}\n`);
-        printData += '================================\n';
+        receipt += 'Ky cuoc: ' + new Date().toLocaleDateString('en-GB') + '\n';
+        receipt += '================================\n';
         
         // Số tiền
-        printData += '\x1B!\x08'; // Bold
-        printData += convertToSafeText(`So tien: ${formatMoney(receiptData.amount)}\n`);
-        printData += '\x1B!\x00'; // Normal
-        printData += convertToSafeText(`Bang chu: ${numberToWords(receiptData.amount)}\n`);
+        receipt += 'So tien: ' + formatMoneyASCII(receiptData.amount) + '\n';
+        receipt += 'Bang chu: ' + toASCII(numberToWordsASCII(receiptData.amount)) + '\n';
         
-        printData += '================================\n';
-        printData += '\x1Ba\x01'; // Center
-        printData += convertToSafeText('SDT: 0978887797\n');
-        printData += convertToSafeText('Tong dai: 18008119\n');
-        printData += '\n';
-        printData += convertToSafeText('Cam on quy khach!\n');
-        printData += '\n\n\n';
-        
-        // Cut paper
-        printData += '\x1DVA\x00';
+        receipt += '================================\n';
+        receipt += '       SDT: 0978887797\n';
+        receipt += '     Tong dai: 18008119\n';
+        receipt += '\n';
+        receipt += '    Cam on quy khach!\n';
+        receipt += '\n\n\n\n';
 
-        await sendToY58(printData);
+        await sendRawBytesToY58(receipt);
 
       } catch (error) {
-        throw new Error(`Lỗi in: ${error.message}`);
+        throw new Error('Loi in: ' + error.message);
       }
     }
 
-    // Chuyển đổi text thành ký tự an toàn cho Y58
-    function convertToSafeText(text) {
-      return text
-        // Loại bỏ dấu tiếng Việt phức tạp
-        .replace(/[àáạảãâầấậẩẫăằắặẳẵ]/g, 'a')
-        .replace(/[èéẹẻẽêềếệểễ]/g, 'e')
-        .replace(/[ìíịỉĩ]/g, 'i')
-        .replace(/[òóọỏõôồốộổỗơờớợởỡ]/g, 'o')
-        .replace(/[ùúụủũưừứựửữ]/g, 'u')
-        .replace(/[ỳýỵỷỹ]/g, 'y')
-        .replace(/đ/g, 'd')
-        .replace(/[ÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴ]/g, 'A')
-        .replace(/[ÈÉẸẺẼÊỀẾỆỂỄ]/g, 'E')
-        .replace(/[ÌÍỊỈĨ]/g, 'I')
-        .replace(/[ÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠ]/g, 'O')
-        .replace(/[ÙÚỤỦŨƯỪỨỰỬỮ]/g, 'U')
-        .replace(/[ỲÝỴỶỸ]/g, 'Y')
-        .replace(/Đ/g, 'D')
-        // Loại bỏ emoji và ký tự đặc biệt
-        .replace(/[^\x00-\x7F]/g, '');
+    // Chuyển đổi hoàn toàn sang ASCII, loại bỏ mọi ký tự không phải ASCII
+    function toASCII(text) {
+      if (!text) return '';
+      
+      return text.toString()
+        // Chuyển tiếng Việt thành không dấu
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Loại bỏ dấu
+        .replace(/[đĐ]/g, 'd') // Chuyển đ thành d
+        .replace(/[ĐDÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴ]/gi, 'A')
+        .replace(/[ÈÉẸẺẼÊỀẾỆỂỄ]/gi, 'E')
+        .replace(/[ÌÍỊỈĨ]/gi, 'I')
+        .replace(/[ÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠ]/gi, 'O')
+        .replace(/[ÙÚỤỦŨƯỪỨỰỬỮ]/gi, 'U')
+        .replace(/[ỲÝỴỶỸ]/gi, 'Y')
+        // Chỉ giữ lại ASCII cơ bản
+        .replace(/[^\x20-\x7E\n\r]/g, '')
+        // Thay thế ký tự đặc biệt thành khoảng trắng
+        .replace(/[^\w\s\-\.\,\:\(\)\/]/g, ' ')
+        // Dọn dẹp khoảng trắng thừa
+        .replace(/\s+/g, ' ')
+        .trim();
     }
 
-    // Gửi dữ liệu đến Y58 với xử lý lỗi font
-    async function sendToY58(data) {
+    // Format tiền chỉ dùng số và chữ ASCII
+    function formatMoneyASCII(amount) {
+      if (!amount) return '0 VND';
+      return new Intl.NumberFormat('en-US').format(amount) + ' VND';
+    }
+
+    // Đọc số thành chữ ASCII thuần
+    function numberToWordsASCII(num) {
+      if (!num || num === 0) return 'khong dong';
+      
+      const ones = ['', 'mot', 'hai', 'ba', 'bon', 'nam', 'sau', 'bay', 'tam', 'chin'];
+      const tens = ['', 'muoi', 'hai muoi', 'ba muoi', 'bon muoi', 'nam muoi', 'sau muoi', 'bay muoi', 'tam muoi', 'chin muoi'];
+      const scales = ['', 'nghin', 'trieu', 'ty'];
+      
+      function convertHundreds(n) {
+        let result = '';
+        if (n >= 100) {
+          result += ones[Math.floor(n / 100)] + ' tram ';
+          n %= 100;
+        }
+        if (n >= 20) {
+          result += tens[Math.floor(n / 10)] + ' ';
+          n %= 10;
+        } else if (n >= 10) {
+          result += 'muoi ';
+          n %= 10;
+        }
+        if (n > 0) result += ones[n] + ' ';
+        return result;
+      }
+      
+      let result = '';
+      let scaleIndex = 0;
+      
+      while (num > 0) {
+        const chunk = num % 1000;
+        if (chunk !== 0) {
+          result = convertHundreds(chunk) + scales[scaleIndex] + ' ' + result;
+        }
+        num = Math.floor(num / 1000);
+        scaleIndex++;
+      }
+      
+      return result.trim() + ' dong';
+    }
+
+    // Gửi raw bytes trực tiếp đến Y58, không dùng encoding phức tạp
+    async function sendRawBytesToY58(text) {
       if (!bluetoothCharacteristic) {
-        throw new Error('Chưa kết nối Y58');
+        throw new Error('Chua ket noi Y58');
       }
 
       try {
-        const encoder = new TextEncoder();
-        const bytes = encoder.encode(data);
+        // Chuyển text thành bytes theo Latin-1 (ISO-8859-1) thay vì UTF-8
+        // Latin-1 tương thích tốt hơn với máy in nhiệt
+        const bytes = new Uint8Array(text.length);
+        for (let i = 0; i < text.length; i++) {
+          bytes[i] = text.charCodeAt(i) & 0xFF; // Chỉ lấy 8 bit thấp
+        }
         
-        // Gửi từng chunk nhỏ để tránh lỗi buffer
+        // Gửi từng chunk nhỏ
         const chunkSize = 20;
         for (let i = 0; i < bytes.length; i += chunkSize) {
           const chunk = bytes.slice(i, i + chunkSize);
           await bluetoothCharacteristic.writeValue(chunk);
-          await sleep(30); // Delay nhỏ giữa các chunk
+          await sleep(50); // Delay lớn hơn để Y58 xử lý
         }
         
       } catch (error) {
         console.error('Y58 send error:', error);
-        throw new Error('Lỗi gửi dữ liệu đến Y58');
+        throw new Error('Loi gui du lieu den Y58');
       }
     }
 
@@ -707,13 +730,13 @@
       const btn = document.getElementById('bluetoothBtn');
       
       if (connected) {
-        status.innerHTML = `🟢 ${deviceName || 'Máy in'} đã kết nối`;
+        status.innerHTML = `🟢 ${deviceName || 'May in'} da ket noi`;
         status.classList.add('connected');
-        btn.innerHTML = '<span>🔌</span> Ngắt kết nối';
+        btn.innerHTML = '<span>🔌</span> Ngat ket noi';
       } else {
-        status.innerHTML = '🔴 Bluetooth chưa kết nối';
+        status.innerHTML = '🔴 Bluetooth chua ket noi';
         status.classList.remove('connected');
-        btn.innerHTML = '<span>📶</span> Kết nối BT';
+        btn.innerHTML = '<span>📶</span> Ket noi BT';
         bluetoothDevice = null;
         bluetoothCharacteristic = null;
       }
@@ -891,7 +914,7 @@
               ${printed ? 
                 '<div class="print-status">✅ Đã in rồi</div>' : 
                 `<button class="btn btn-danger" onclick="printReceipt('${escapeQuotes(name)}', '${escapeQuotes(address)}', '${phone}', '${escapeQuotes(service)}', '${escapeQuotes(content)}', ${amount}, '${invoice}', ${record.rowIndex})">
-                  <span>🖨️</span> In Y58
+                  <span>🖨️</span> In ASCII
                 </button>`
               }
             </div>
@@ -925,7 +948,7 @@
       }
 
       try {
-        showStatus('loading', '🖨️ Đang in phiếu thu...');
+        showStatus('loading', '🖨️ Đang in phiếu thu (ASCII mode)...');
 
         await printReceiptBluetooth({
           name, address, phone, service, content, amount, invoice
@@ -964,45 +987,6 @@
         style: 'currency', 
         currency: 'VND'
       }).format(amount);
-    }
-
-    function numberToWords(num) {
-      if (!num || num === 0) return 'Khong dong';
-      
-      const ones = ['', 'mot', 'hai', 'ba', 'bon', 'nam', 'sau', 'bay', 'tam', 'chin'];
-      const tens = ['', 'muoi', 'hai muoi', 'ba muoi', 'bon muoi', 'nam muoi', 'sau muoi', 'bay muoi', 'tam muoi', 'chin muoi'];
-      const scales = ['', 'nghin', 'trieu', 'ty'];
-      
-      function convertHundreds(n) {
-        let result = '';
-        if (n >= 100) {
-          result += ones[Math.floor(n / 100)] + ' tram ';
-          n %= 100;
-        }
-        if (n >= 20) {
-          result += tens[Math.floor(n / 10)].replace('muoi', 'muoi') + ' ';
-          n %= 10;
-        } else if (n >= 10) {
-          result += 'muoi ';
-          n %= 10;
-        }
-        if (n > 0) result += ones[n] + ' ';
-        return result;
-      }
-      
-      let result = '';
-      let scaleIndex = 0;
-      
-      while (num > 0) {
-        const chunk = num % 1000;
-        if (chunk !== 0) {
-          result = convertHundreds(chunk) + scales[scaleIndex] + ' ' + result;
-        }
-        num = Math.floor(num / 1000);
-        scaleIndex++;
-      }
-      
-      return result.trim() + ' dong';
     }
 
     function sleep(ms) {
