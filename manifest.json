@@ -1,0 +1,24 @@
+{
+  "name": "In Phiếu Thu WiFi",
+  "short_name": "InPhieuWiFi",
+  "description": "Hệ thống in phiếu thu tiền WiFi qua Bluetooth - Viettel Đồng Tháp",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#667eea",
+  "theme_color": "#e74c3c",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjZTc0YzNjIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0xOSA4SDVjLTEuNjYgMC0zIDEuMzQtMyAzdjZjMCAxLjY2IDEuMzQgMyAzIDNoMTRjMS42NiAwIDMtMS4zNCAzLTNWMTFjMC0xLjY2LTEuMzQtMy0zLTN6bS0zIDdIOHYtMmg4djJ6Ii8+PC9zdmc+",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjZTc0YzNjIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0xOSA4SDVjLTEuNjYgMC0zIDEuMzQtMyAzdjZjMCAxLjY2IDEuMzQgMyAzIDNoMTRjMS42NiAwIDMtMS4zNCAzLTNWMTFjMC0xLjY2LTEuMzQtMy0zLTN6bS0zIDdIOHYtMmg4djJ6Ii8+PC9zdmc+",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
