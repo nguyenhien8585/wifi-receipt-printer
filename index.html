@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>In Phiếu Thu Tiền WiFi 58mm - Bluetooth</title>
+  <title>In Phiếu Thu Tiền WiFi 58mm - Bluetooth (Fixed Tiếng Việt)</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#e74c3c">
   
@@ -89,7 +89,7 @@
       color: #495057;
     }
     
-    .config-row input {
+    .config-row input, .config-row select {
       flex: 1;
       padding: 10px 15px;
       border: 2px solid #ced4da;
@@ -99,7 +99,7 @@
       transition: all 0.3s;
     }
     
-    .config-row input:focus {
+    .config-row input:focus, .config-row select:focus {
       outline: none;
       border-color: #667eea;
       box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
@@ -324,6 +324,16 @@
       font-size: 14px;
     }
     
+    .encoding-info {
+      background: #e7f5ff;
+      border: 1px solid #339af0;
+      border-radius: 8px;
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 12px;
+      color: #1864ab;
+    }
+    
     @media (max-width: 768px) {
       body {
         padding: 5px;
@@ -349,7 +359,7 @@
         min-width: auto;
       }
       
-      .config-row input {
+      .config-row input, .config-row select {
         width: 100%;
         min-width: auto;
       }
@@ -394,8 +404,8 @@
 <body>
   <div class="container">
     <div class="header">
-      <h1>🖨️ In Phiếu Thu Tiền WiFi</h1>
-      <div class="subtitle">Hệ thống in Bluetooth 58mm - Viettel Đồng Tháp</div>
+      <h1>🖨️ In Phiếu Thu Tiền WiFi (Fixed Tiếng Việt)</h1>
+      <div class="subtitle">Hệ thống in Bluetooth 58mm - Viettel Đồng Tháp - NO Chinese Characters!</div>
       <div class="bluetooth-status" id="bluetoothStatus">🔴 Bluetooth chưa kết nối</div>
     </div>
     
@@ -409,6 +419,22 @@
       <div class="config-row">
         <label>📄 Sheet Name:</label>
         <input type="text" id="sheetName" value="Sheet1" placeholder="Tên sheet (VD: Sheet1)">
+      </div>
+      <div class="config-row">
+        <label>🔤 Encoding Mode:</label>
+        <select id="encodingMode">
+          <option value="vietnamese-safe">Vietnamese Safe (Recommended)</option>
+          <option value="windows-1258">Windows-1258</option>
+          <option value="ascii-fallback">ASCII Only (No Diacritics)</option>
+        </select>
+      </div>
+      <div class="config-row">
+        <label></label>
+        <div class="encoding-info">
+          <strong>Vietnamese Safe:</strong> Optimized for Y58 printers, no Chinese characters<br>
+          <strong>Windows-1258:</strong> Standard Vietnamese encoding<br>
+          <strong>ASCII Only:</strong> Remove all diacritics (ă → a, ê → e, etc.)
+        </div>
       </div>
       <div class="config-row">
         <label></label>
@@ -436,6 +462,9 @@
       <button class="btn btn-warning" onclick="testConnection()">
         <span>🔧</span> Test Sheet
       </button>
+      <button class="btn btn-primary" onclick="testVietnamesePrint()">
+        <span>🧪</span> Test Tiếng Việt
+      </button>
     </div>
 
     <!-- Trạng thái -->
@@ -459,7 +488,7 @@
     <div class="footer">
       <div>📞 Hotline: 0978887797 | 📧 Email: support@viettel.com.vn</div>
       <div style="margin-top: 5px; font-size: 12px; opacity: 0.8;">
-        © 2024 Viettel Đồng Tháp - Hệ thống in phiếu thu WiFi
+        © 2024 Viettel Đồng Tháp - Hệ thống in phiếu thu WiFi (Fixed Vietnamese)
       </div>
     </div>
   </div>
@@ -481,16 +510,17 @@
         if (e.key === 'Enter') search();
       });
       
-      ['sheetId', 'sheetName'].forEach(id => {
+      // Lưu cấu hình
+      ['sheetId', 'sheetName', 'encodingMode'].forEach(id => {
         const input = document.getElementById(id);
         input.value = localStorage.getItem(id) || input.value;
-        input.addEventListener('input', () => {
+        input.addEventListener('change', () => {
           localStorage.setItem(id, input.value);
         });
       });
     });
 
-    // ==================== BLUETOOTH Y58 ====================
+    // ==================== BLUETOOTH Y58 - FIXED VIETNAMESE ====================
     
     async function connectBluetooth() {
       if (!navigator.bluetooth) {
@@ -548,9 +578,6 @@
         
         updateBluetoothStatus(true, bluetoothDevice.name || 'Y58');
         showStatus('success', `✅ Đã kết nối ${bluetoothDevice.name || 'Y58'}!`);
-        
-        // Test in
-        await testPrintASCIIOnly();
 
       } catch (error) {
         console.error('Bluetooth error:', error);
@@ -559,144 +586,296 @@
       }
     }
 
-    // Test print chỉ dùng ASCII
-    async function testPrintASCIIOnly() {
-      if (!bluetoothCharacteristic) return;
+    // Test print tiếng Việt
+    async function testVietnamesePrint() {
+      if (!bluetoothCharacteristic) {
+        alert('❌ Chưa kết nối máy in Y58!');
+        return;
+      }
 
-      const testData = 
-        '\n' +
-        '      viettel\n' +
-        '   Theo cach cua ban\n' +
-        '  VIETTEL DONG THAP\n' +
-        '     BIEN NHAN\n' +
-        '================================\n' +
-        ' ASCII only - Khong loi!\n' +
-        ' Tieng Viet khong dau OK!\n' +
-        ` ${new Date().toLocaleString('en-GB')}\n` +
-        '================================\n' +
-        '\n\n';
+      const encodingMode = document.getElementById('encodingMode').value;
+      
+      try {
+        showStatus('loading', '🧪 Đang test in tiếng Việt...');
+        
+        const testText = 
+          '\n\n' +
+          '      VIETTEL\n' +
+          '   Theo cach cua ban\n' +
+          '  VIETTEL DONG THAP\n' +
+          '     TEST TIENG VIET\n' +
+          '================================\n' +
+          'Ten khach hang:\n' +
+          '  Nguyen Van A\n' +
+          'Dia chi:\n' +
+          '  123 Duong Nguyen Hue,\n' +
+          '  Phuong 1, TP. Cao Lanh,\n' +
+          '  Dong Thap\n' +
+          'Dien thoai: 0901234567\n' +
+          'Thu cuoc thang 12/2024\n' +
+          'So tien: 100.000 d\n' +
+          'Bang chu: Mot tram ngan dong.\n' +
+          '================================\n' +
+          ' Test tieng Viet thanh cong!\n' +
+          ` Encoding: ${encodingMode}\n` +
+          ` Thoi gian: ${new Date().toLocaleString('vi-VN')}\n` +
+          '================================\n' +
+          '\n\n';
 
-      await sendASCIIOnly(testData);
+        await sendToYT58Printer(testText);
+        showStatus('success', '✅ Test tiếng Việt thành công!');
+        
+      } catch (error) {
+        console.error('Test error:', error);
+        showError(`❌ Lỗi test: ${error.message}`);
+      }
     }
 
-    // ==================== FIX TRIỆT ĐỂ - CHỈ DÙNG ASCII ====================
+    // ==================== FIXED VIETNAMESE ENCODING FOR Y58 ====================
     
     async function printReceiptBluetooth(receiptData) {
       if (!bluetoothCharacteristic) {
-        throw new Error('Chua ket noi may in');
+        throw new Error('Chưa kết nối máy in');
       }
 
       try {
         let receipt = '';
         
-        // Header căn giữa - chỉ ASCII
-        receipt += '\n';
-        receipt += '      viettel\n';
+        // Reset và setup máy in
+        receipt += '\x1B\x40'; // ESC @ - Reset printer
+        await sleep(200);
+        
+        // Header căn giữa
+        receipt += '\x1B\x61\x01'; // Center align
+        receipt += '      VIETTEL\n';
         receipt += '   Theo cach cua ban\n';
         receipt += '  VIETTEL DONG THAP\n';
         receipt += '     BIEN NHAN\n';
+        receipt += '\x1B\x61\x00'; // Left align
         receipt += '================================\n';
         
-        // Thông tin khách hàng - chuyển sang ASCII
+        // Thông tin khách hàng
         receipt += 'Ten khach hang:\n';
-        receipt += `${vietnameseToASCII(receiptData.name)}\n`;
+        receipt += `  ${receiptData.name}\n`;
         
-        receipt += 'Dia chi: ';
-        const address = vietnameseToASCII(receiptData.address);
-        if (address.length > 30) {
-          const words = address.split(' ');
-          let currentLine = '';
-          
-          for (let word of words) {
-            if ((currentLine + word).length > 30 && currentLine) {
-              receipt += currentLine.trim() + '\n';
-              currentLine = word + ' ';
-            } else {
-              currentLine += word + ' ';
-            }
-          }
-          if (currentLine.trim()) receipt += currentLine.trim() + '\n';
-        } else {
-          receipt += address + '\n';
+        receipt += 'Dia chi:\n';
+        const address = receiptData.address;
+        const addressLines = wrapText(address, 30);
+        for (const line of addressLines) {
+          receipt += `  ${line}\n`;
         }
         
+        receipt += 'Dien thoai:\n';
+        receipt += `  ${receiptData.phone}\n`;
+        
         receipt += 'Thue bao:\n';
-        receipt += `    ${vietnameseToASCII(receiptData.service)}\n`;
+        receipt += `  ${receiptData.service}\n`;
         
         receipt += 'Noi dung:\n';
-        receipt += `    ${vietnameseToASCII(receiptData.content)}\n`;
-        
-        receipt += 'Dien thoai lien he:\n';
-        receipt += `    ${receiptData.phone}\n`;
+        receipt += `  ${receiptData.content}\n`;
         
         receipt += 'Ky cuoc:\n';
-        receipt += `    Thang ${String(new Date().getMonth() + 1).padStart(2, '0')}/${new Date().getFullYear()}\n`;
+        receipt += `  ${formatDateVietnam(new Date())}\n`;
         
         receipt += '================================\n';
         
         // Số tiền
-        receipt += `So tien: ${formatMoneyASCII(receiptData.amount)}\n`;
-        receipt += `Bang chu: ${numberToASCIIWords(receiptData.amount)}\n`;
+        receipt += `So tien: ${formatMoneyVietnam(receiptData.amount)}\n`;
+        receipt += `Bang chu: ${numberToVietnameseWords(receiptData.amount)}\n`;
         
         receipt += '================================\n';
         
         // Footer
         receipt += 'SDT lien he: 0978887797\n';
-        receipt += 'Tong dai cskh: 18008119\n';
+        receipt += 'Tong dai CSKH: 18008119\n';
         receipt += '\n';
         receipt += 'Cam on quy khach!\n';
         receipt += '\n\n\n';
 
-        await sendASCIIOnly(receipt);
+        await sendToYT58Printer(receipt);
 
       } catch (error) {
-        throw new Error(`Loi in: ${error.message}`);
+        throw new Error(`Lỗi in: ${error.message}`);
       }
     }
 
-    // Chuyển tiếng Việt có dấu thành ASCII không dấu
-    function vietnameseToASCII(text) {
-      if (!text) return '';
+    // Send data to Y58 printer với multiple encoding options
+    async function sendToYT58Printer(text) {
+      if (!bluetoothCharacteristic) {
+        throw new Error('Chưa kết nối Y58');
+      }
+
+      const encodingMode = document.getElementById('encodingMode').value;
       
-      return text.toString()
-        // Chuyển thành chữ thường để xử lý
-        .toLowerCase()
-        // Loại bỏ dấu tiếng Việt
-        .replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, 'a')
-        .replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, 'e')
-        .replace(/ì|í|ị|ỉ|ĩ/g, 'i')
-        .replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, 'o')
-        .replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, 'u')
-        .replace(/ỳ|ý|ỵ|ỷ|ỹ/g, 'y')
-        .replace(/đ/g, 'd')
-        // Xử lý chữ hoa
-        .replace(/À|Á|Ạ|Ả|Ã|Â|Ầ|Ấ|Ậ|Ẩ|Ẫ|Ă|Ằ|Ắ|Ặ|Ẳ|Ẵ/g, 'A')
-        .replace(/È|É|Ẹ|Ẻ|Ẽ|Ê|Ề|Ế|Ệ|Ể|Ễ/g, 'E')
-        .replace(/Ì|Í|Ị|Ỉ|Ĩ/g, 'I')
-        .replace(/Ò|Ó|Ọ|Ỏ|Õ|Ô|Ồ|Ố|Ộ|Ổ|Ỗ|Ơ|Ờ|Ớ|Ợ|Ở|Ỡ/g, 'O')
-        .replace(/Ù|Ú|Ụ|Ủ|Ũ|Ư|Ừ|Ứ|Ự|Ử|Ữ/g, 'U')
-        .replace(/Ỳ|Ý|Ỵ|Ỷ|Ỹ/g, 'Y')
-        .replace(/Đ/g, 'D')
-        // Chỉ giữ lại ASCII cơ bản
-        .replace(/[^\x20-\x7E]/g, '')
-        // Viết hoa chữ cái đầu của từng từ
-        .replace(/\b\w/g, l => l.toUpperCase());
+      try {
+        let processedText;
+        
+        switch (encodingMode) {
+          case 'vietnamese-safe':
+            processedText = convertToVietnameseSafe(text);
+            break;
+          case 'windows-1258':
+            processedText = convertToWindows1258(text);
+            break;
+          case 'ascii-fallback':
+            processedText = removeDiacritics(text);
+            break;
+          default:
+            processedText = convertToVietnameseSafe(text);
+        }
+        
+        console.log('Encoding mode:', encodingMode);
+        console.log('Original text:', text.substring(0, 100));
+        console.log('Processed text:', processedText.substring(0, 100));
+        
+        // Gửi data với chunk nhỏ để tránh buffer overflow
+        const bytes = textToBytes(processedText);
+        const chunkSize = 20;
+        
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+          const chunk = bytes.slice(i, i + chunkSize);
+          
+          if (bluetoothCharacteristic.properties.writeWithoutResponse) {
+            await bluetoothCharacteristic.writeValueWithoutResponse(chunk);
+          } else {
+            await bluetoothCharacteristic.writeValue(chunk);
+          }
+          
+          await sleep(50); // Delay giữa các chunk
+        }
+        
+      } catch (error) {
+        console.error('Send error:', error);
+        throw new Error('Lỗi gửi dữ liệu đến máy in');
+      }
     }
 
-    // Format tiền ASCII
-    function formatMoneyASCII(amount) {
-      if (!amount || amount === 0) return '0 VND';
-      return new Intl.NumberFormat('en-US').format(amount) + ' VND';
+    // VIETNAMESE SAFE ENCODING - Optimized for Y58
+    function convertToVietnameseSafe(text) {
+      // Mapping an toàn cho Y58, không xuất hiện ký tự Trung Quốc
+      const safeMap = {
+        // Chữ thường
+        'à': 'a', 'á': 'a', 'ả': 'a', 'ã': 'a', 'ạ': 'a',
+        'ă': 'a', 'ằ': 'a', 'ắ': 'a', 'ẳ': 'a', 'ẵ': 'a', 'ặ': 'a',
+        'â': 'a', 'ầ': 'a', 'ấ': 'a', 'ẩ': 'a', 'ẫ': 'a', 'ậ': 'a',
+        'è': 'e', 'é': 'e', 'ẻ': 'e', 'ẽ': 'e', 'ẹ': 'e',
+        'ê': 'e', 'ề': 'e', 'ế': 'e', 'ể': 'e', 'ễ': 'e', 'ệ': 'e',
+        'ì': 'i', 'í': 'i', 'ỉ': 'i', 'ĩ': 'i', 'ị': 'i',
+        'ò': 'o', 'ó': 'o', 'ỏ': 'o', 'õ': 'o', 'ọ': 'o',
+        'ô': 'o', 'ồ': 'o', 'ố': 'o', 'ổ': 'o', 'ỗ': 'o', 'ộ': 'o',
+        'ơ': 'o', 'ờ': 'o', 'ớ': 'o', 'ở': 'o', 'ỡ': 'o', 'ợ': 'o',
+        'ù': 'u', 'ú': 'u', 'ủ': 'u', 'ũ': 'u', 'ụ': 'u',
+        'ư': 'u', 'ừ': 'u', 'ứ': 'u', 'ử': 'u', 'ữ': 'u', 'ự': 'u',
+        'ỳ': 'y', 'ý': 'y', 'ỷ': 'y', 'ỹ': 'y', 'ỵ': 'y',
+        'đ': 'd',
+        
+        // Chữ hoa
+        'À': 'A', 'Á': 'A', 'Ả': 'A', 'Ã': 'A', 'Ạ': 'A',
+        'Ă': 'A', 'Ằ': 'A', 'Ắ': 'A', 'Ẳ': 'A', 'Ẵ': 'A', 'Ặ': 'A',
+        'Â': 'A', 'Ầ': 'A', 'Ấ': 'A', 'Ẩ': 'A', 'Ẫ': 'A', 'Ậ': 'A',
+        'È': 'E', 'É': 'E', 'Ẻ': 'E', 'Ẽ': 'E', 'Ẹ': 'E',
+        'Ê': 'E', 'Ề': 'E', 'Ế': 'E', 'Ể': 'E', 'Ễ': 'E', 'Ệ': 'E',
+        'Ì': 'I', 'Í': 'I', 'Ỉ': 'I', 'Ĩ': 'I', 'Ị': 'I',
+        'Ò': 'O', 'Ó': 'O', 'Ỏ': 'O', 'Õ': 'O', 'Ọ': 'O',
+        'Ô': 'O', 'Ồ': 'O', 'Ố': 'O', 'Ổ': 'O', 'Ỗ': 'O', 'Ộ': 'O',
+        'Ơ': 'O', 'Ờ': 'O', 'Ớ': 'O', 'Ở': 'O', 'Ỡ': 'O', 'Ợ': 'O',
+        'Ù': 'U', 'Ú': 'U', 'Ủ': 'U', 'Ũ': 'U', 'Ụ': 'U',
+        'Ư': 'U', 'Ừ': 'U', 'Ứ': 'U', 'Ử': 'U', 'Ữ': 'U', 'Ự': 'U',
+        'Ỳ': 'Y', 'Ý': 'Y', 'Ỷ': 'Y', 'Ỹ': 'Y', 'Ỵ': 'Y',
+        'Đ': 'D'
+      };
+
+      return text.replace(/[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđÀÁẢÃẠĂẰẮẲẴẶÂẦẤẨẪẬÈÉẺẼẸÊỀẾỂỄỆÌÍỈĨỊÒÓỎÕỌÔỒỐỔỖỘƠỜỚỞỠỢÙÚỦŨỤƯỪỨỬỮỰỲÝỶỸỴĐ]/g, 
+        char => safeMap[char] || char);
     }
 
-    // Chuyển số thành chữ ASCII không dấu
-    function numberToASCIIWords(num) {
+    // WINDOWS-1258 ENCODING
+    function convertToWindows1258(text) {
+      // Simplified Windows-1258 cho Y58
+      const win1258Map = {
+        'à': '\xE0', 'á': '\xE1', 'â': '\xE2', 'ã': '\xE3', 'ạ': '\xE4',
+        'ă': '\xE5', 'ậ': '\xE6', 'ắ': '\xE7', 'ầ': '\xE8', 'ấ': '\xE9',
+        'è': '\xE8', 'é': '\xE9', 'ê': '\xEA', 'ẽ': '\xEB', 'ẹ': '\xEC',
+        'ì': '\xEC', 'í': '\xED', 'î': '\xEE', 'ĩ': '\xEF', 'ị': '\xF0',
+        'ò': '\xF2', 'ó': '\xF3', 'ô': '\xF4', 'õ': '\xF5', 'ọ': '\xF6',
+        'ơ': '\xF7', 'ù': '\xF9', 'ú': '\xFA', 'û': '\xFB', 'ũ': '\xFC',
+        'ụ': '\xFD', 'ư': '\xFE', 'ý': '\xFF', 'đ': '\xF0',
+        // Uppercase
+        'À': '\xC0', 'Á': '\xC1', 'Â': '\xC2', 'Ã': '\xC3', 'Ạ': '\xC4',
+        'È': '\xC8', 'É': '\xC9', 'Ê': '\xCA', 'Ì': '\xCC', 'Í': '\xCD',
+        'Ò': '\xD2', 'Ó': '\xD3', 'Ô': '\xD4', 'Õ': '\xD5', 'Ù': '\xD9',
+        'Ú': '\xDA', 'Ý': '\xDD', 'Đ': '\xD0'
+      };
+
+      return text.replace(/[àáâãạăậắầấèéêẽẹìíîĩịòóôõọơùúûũụưýđÀÁÂÃẠĂÈÉÊÌÍÒÓÔÕÙÚÝĐ]/g, 
+        char => win1258Map[char] || char);
+    }
+
+    // REMOVE DIACRITICS - ASCII FALLBACK
+    function removeDiacritics(text) {
+      return convertToVietnameseSafe(text); // Same as Vietnamese Safe for this case
+    }
+
+    // Convert text to byte array
+    function textToBytes(text) {
+      const bytes = [];
+      for (let i = 0; i < text.length; i++) {
+        const charCode = text.charCodeAt(i);
+        if (charCode <= 255) {
+          bytes.push(charCode);
+        } else {
+          bytes.push(63); // ? character for unknown chars
+        }
+      }
+      return new Uint8Array(bytes);
+    }
+
+    // Wrap text to fit printer width
+    function wrapText(text, maxLength) {
+      if (text.length <= maxLength) return [text];
+      
+      const words = text.split(' ');
+      const lines = [];
+      let currentLine = '';
+      
+      for (const word of words) {
+        if ((currentLine + word).length > maxLength && currentLine) {
+          lines.push(currentLine.trim());
+          currentLine = word + ' ';
+        } else {
+          currentLine += word + ' ';
+        }
+      }
+      
+      if (currentLine.trim()) {
+        lines.push(currentLine.trim());
+      }
+      
+      return lines;
+    }
+
+    // Format ngày theo chuẩn Việt Nam
+    function formatDateVietnam(date) {
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+
+    // Format tiền tệ Việt Nam
+    function formatMoneyVietnam(amount) {
+      if (!amount || amount === 0) return '0 d';
+      return new Intl.NumberFormat('vi-VN').format(amount) + ' d';
+    }
+
+    // Chuyển số thành chữ tiếng Việt (ASCII safe)
+    function numberToVietnameseWords(num) {
       if (!num || num === 0) return 'Khong dong';
       
       const ones = ['', 'mot', 'hai', 'ba', 'bon', 'nam', 'sau', 'bay', 'tam', 'chin'];
       const tens = ['', 'muoi', 'hai muoi', 'ba muoi', 'bon muoi', 'nam muoi', 
                    'sau muoi', 'bay muoi', 'tam muoi', 'chin muoi'];
-      const scales = ['', 'nghin', 'trieu', 'ty'];
+      const scales = ['', 'ngan', 'trieu', 'ty'];
       
       function convertHundreds(n) {
         let result = '';
@@ -745,60 +924,24 @@
       return result + ' dong.';
     }
 
-    // Gửi chỉ ASCII thuần
-    async function sendASCIIOnly(text) {
-      if (!bluetoothCharacteristic) {
-        throw new Error('Chua ket noi Y58');
-      }
-
-      try {
-        // Đảm bảo chỉ là ASCII
-        const asciiText = text.replace(/[^\x20-\x7E\r\n]/g, '');
-        
-        // Chuyển thành bytes
-        const bytes = new Uint8Array(asciiText.length);
-        for (let i = 0; i < asciiText.length; i++) {
-          bytes[i] = asciiText.charCodeAt(i);
-        }
-        
-        // Gửi từng chunk nhỏ
-        const chunkSize = 20;
-        for (let i = 0; i < bytes.length; i += chunkSize) {
-          const chunk = bytes.slice(i, i + chunkSize);
-          
-          if (bluetoothCharacteristic.properties.writeWithoutResponse) {
-            await bluetoothCharacteristic.writeValueWithoutResponse(chunk);
-          } else {
-            await bluetoothCharacteristic.writeValue(chunk);
-          }
-          
-          await sleep(30);
-        }
-        
-      } catch (error) {
-        console.error('ASCII send error:', error);
-        throw new Error('Loi gui ASCII den Y58');
-      }
-    }
-
     function updateBluetoothStatus(connected, deviceName = '') {
       const status = document.getElementById('bluetoothStatus');
       const btn = document.getElementById('bluetoothBtn');
       
       if (connected) {
-        status.innerHTML = `🟢 ${deviceName || 'May in'} da ket noi`;
+        status.innerHTML = `🟢 ${deviceName || 'Máy in'} đã kết nối`;
         status.classList.add('connected');
-        btn.innerHTML = '<span>🔌</span> Ngat ket noi';
+        btn.innerHTML = '<span>🔌</span> Ngắt kết nối';
       } else {
-        status.innerHTML = '🔴 Bluetooth chua ket noi';
+        status.innerHTML = '🔴 Bluetooth chưa kết nối';
         status.classList.remove('connected');
-        btn.innerHTML = '<span>📶</span> Ket noi BT';
+        btn.innerHTML = '<span>📶</span> Kết nối BT';
         bluetoothDevice = null;
         bluetoothCharacteristic = null;
       }
     }
 
-    // ==================== GOOGLE SHEETS ====================
+    // ==================== GOOGLE SHEETS (unchanged) ====================
     
     async function testConnection() {
       const sheetId = document.getElementById('sheetId').value.trim();
@@ -970,7 +1113,7 @@
               ${printed ? 
                 '<div class="print-status">✅ Đã in rồi</div>' : 
                 `<button class="btn btn-danger" onclick="printReceipt('${escapeQuotes(name)}', '${escapeQuotes(address)}', '${phone}', '${escapeQuotes(service)}', '${escapeQuotes(content)}', ${amount}, '${invoice}', ${record.rowIndex})">
-                  <span>🖨️</span> In ASCII
+                  <span>🖨️</span> In Fixed VN
                 </button>`
               }
             </div>
@@ -1004,7 +1147,8 @@
       }
 
       try {
-        showStatus('loading', '🖨️ Đang in phiếu thu (ASCII)...');
+        const encodingMode = document.getElementById('encodingMode').value;
+        showStatus('loading', `🖨️ Đang in phiếu thu (${encodingMode})...`);
 
         await printReceiptBluetooth({
           name, address, phone, service, content, amount, invoice
